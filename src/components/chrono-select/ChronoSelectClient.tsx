@@ -223,9 +223,43 @@ const ChronoSelectClient: React.FC = () => {
 
   const handleRangeInputChange = (rangeId: string, newValue: string, type: RowType) => {
     const setInputValues = type === 'work' ? setWorkRangeInputValues : setGapRangeInputValues;
-    const filteredValue = newValue.replace(/[^0-9/\- ]/g, ''); // Allow numbers, slash, hyphen, space
+    const previousValue = (type === 'work' ? workRangeInputValues : gapRangeInputValues)[rangeId] || "";
 
-    setInputValues(prev => ({ ...prev, [rangeId]: filteredValue }));
+    let currentFilteredValue = newValue.replace(/[^0-9/\- ]/g, '');
+
+    // Attempt auto-formatting - this is a simplified heuristic
+    // Leading zero for the very first month digit if it's 2-9
+    if (currentFilteredValue.length === 1 && previousValue.length === 0 && /[2-9]/.test(currentFilteredValue)) {
+        currentFilteredValue = '0' + currentFilteredValue;
+    }
+
+    // Add '/' after MM if it's missing and user is typing the year
+    if (currentFilteredValue.length === 2 && previousValue.length === 1 && /^\d{2}$/.test(currentFilteredValue)) {
+        currentFilteredValue += '/';
+    }
+    // Add ' - ' after MM/YYYY if it's missing
+    if (currentFilteredValue.length === 7 && previousValue.length === 6 && /^\d{2}\/\d{4}$/.test(currentFilteredValue)) {
+        currentFilteredValue += ' - ';
+    }
+
+    // Leading zero for the second month digit (after ' - ')
+    const separatorIdx = currentFilteredValue.indexOf(' - ');
+    if (separatorIdx !== -1 && currentFilteredValue.length === separatorIdx + 4 && previousValue.length === separatorIdx + 3 && /[2-9]/.test(currentFilteredValue.slice(-1))) {
+        currentFilteredValue = currentFilteredValue.slice(0, -1) + '0' + currentFilteredValue.slice(-1);
+    }
+
+
+    // Add '/' after MM for the second date (MM/YYYY - MM/)
+    if (currentFilteredValue.length === 12 && previousValue.length === 11 && /^\d{2}\/\d{4}\s-\s\d{2}$/.test(currentFilteredValue)) {
+        currentFilteredValue += '/';
+    }
+
+    // Max length for "MM/YYYY - MM/YYYY" is 17
+    if (currentFilteredValue.length > 17) {
+      currentFilteredValue = currentFilteredValue.substring(0, 17);
+    }
+    
+    setInputValues(prev => ({ ...prev, [rangeId]: currentFilteredValue }));
     setInputValidationStatus(prev => ({...prev, [rangeId]: 'neutral'}));
   };
 
@@ -234,7 +268,7 @@ const ChronoSelectClient: React.FC = () => {
     const parsed = parseDateRangeString(currentValue, timelineMonths);
     const setSelectedMonths = type === 'work' ? setWorkSelectedMonths : setGapSelectedMonths;
     const dateRanges = type === 'work' ? workDateRanges : gapDateRanges;
-    const setPendingInputs = type === 'work' ? setPendingWorkInputs : setPendingGapInputs;
+    const setPendingInputs = type === 'work' ? setPendingWorkInputs : setGapPendingInputs;
     const setRangeInputValues = type === 'work' ? setWorkRangeInputValues : setGapRangeInputValues;
 
     const originalRange = dateRanges.find(r => r.id === rangeId);
@@ -462,6 +496,39 @@ const ChronoSelectClient: React.FC = () => {
     </p>
   `;
 
+  const workInfoTooltipContent = (
+    <div className="space-y-1.5 p-1">
+      <p className="text-sm font-semibold text-foreground">Work Period Format</p>
+      <p className="text-xs text-muted-foreground">Enter work dates as <code className="bg-muted px-1 rounded text-xs">MM/YYYY</code>.</p>
+      <div>
+        <p className="text-xs text-muted-foreground font-medium">Examples:</p>
+        <ul className="list-disc list-outside pl-5 text-xs text-muted-foreground space-y-0.5 mt-1">
+          <li>Single month: <code className="bg-muted px-1 rounded text-xs">03/2023</code></li>
+          <li>Date range: <code className="bg-muted px-1 rounded text-xs">01/2023 - 05/2023</code></li>
+        </ul>
+      </div>
+      <p className="text-xs text-muted-foreground pt-1">Dates must be within the 5-year timeline displayed.</p>
+      <p className="text-xs text-muted-foreground">Allowed characters: numbers, <code className="bg-muted px-1 rounded text-xs">/</code>, <code className="bg-muted px-1 rounded text-xs">-</code>, space.</p>
+    </div>
+  );
+  
+  const gapInfoTooltipContent = (
+    <div className="space-y-1.5 p-1">
+      <p className="text-sm font-semibold text-foreground">Gap Period Format</p>
+      <p className="text-xs text-muted-foreground">Enter gap dates as <code className="bg-muted px-1 rounded text-xs">MM/YYYY</code>.</p>
+      <div>
+        <p className="text-xs text-muted-foreground font-medium">Examples:</p>
+        <ul className="list-disc list-outside pl-5 text-xs text-muted-foreground space-y-0.5 mt-1">
+          <li>For one month: <code className="bg-muted px-1 rounded text-xs">07/2022</code></li>
+          <li>For several months: <code className="bg-muted px-1 rounded text-xs">11/2023 - 02/2024</code></li>
+        </ul>
+      </div>
+      <p className="text-xs text-muted-foreground pt-1">Ensure dates fall within the displayed timeline.</p>
+      <p className="text-xs text-muted-foreground">You can use: numbers, <code className="bg-muted px-1 rounded text-xs">/</code>, <code className="bg-muted px-1 rounded text-xs">-</code>, space.</p>
+    </div>
+  );
+
+
   const renderDateInputs = (type: RowType): JSX.Element[] => {
     const ranges = type === 'work' ? workDateRanges : gapDateRanges;
     const inputValues = type === 'work' ? workRangeInputValues : gapRangeInputValues;
@@ -517,10 +584,8 @@ const ChronoSelectClient: React.FC = () => {
     });
     
     if (allInputElements.length === 0) {
-      // This is a bit of a hack to fit the <p> tag into JSX.Element[]
-      // A better approach might be to handle the empty state outside this function
       const emptyMessage = (
-        <p key={`empty-${type}`} className="text-sm text-muted-foreground italic">
+        <p key={`empty-${type}`} className="text-sm text-muted-foreground italic flex-grow">
           Click the '+' button to add a {type === 'work' ? 'work' : 'gap'} period.
         </p>
       ) as unknown as JSX.Element;
@@ -544,7 +609,7 @@ const ChronoSelectClient: React.FC = () => {
               <HelpCircle className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:w-3/4 md:w-1/2 lg:w-1/3 xl:w-1/4 overflow-y-auto">
+          <SheetContent side="left" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto">
             <SheetHeader className="mb-4">
               <SheetTitle>Help & Usage Guide</SheetTitle>
             </SheetHeader>
@@ -579,16 +644,14 @@ const ChronoSelectClient: React.FC = () => {
                   onChange={(e) => {
                       let val = parseInt(e.target.value, 10);
                       if (e.target.value === '') {
-                          val = 1; // Or whatever you want the default to be if field is cleared
+                          val = 1; 
                       }
-                      // Ensure value is within 1-60 range
                       if (!isNaN(val)) {
                         if (val < 1) val = 1;
                         if (val > 60) val = 60;
                         setSignificantGapThresholdMonths(val);
                       } else {
-                        // Handle cases where parsing fails, e.g., set to default or current
-                         setSignificantGapThresholdMonths(1); // Fallback
+                         setSignificantGapThresholdMonths(1); 
                       }
                   }}
                   className="text-sm w-full"
@@ -666,12 +729,26 @@ const ChronoSelectClient: React.FC = () => {
           }}
       >
         {[
-          { type: 'work', label: 'Work History Dates' },
-          { type: 'gap', label: 'Gap History Dates' }
-        ].map(({ type, label }) => (
+          { type: 'work', label: 'Work History Dates', tooltipContent: workInfoTooltipContent },
+          { type: 'gap', label: 'Gap History Dates', tooltipContent: gapInfoTooltipContent }
+        ].map(({ type, label, tooltipContent }) => (
           <div key={type} className="flex items-start">
-            <p style={{ width: `var(--row-label-width-px)` }} className="flex-shrink-0 pr-2 pt-2 text-xs font-medium text-primary text-right">{label}</p>
-            <div className="flex flex-grow items-center gap-2">
+            <div style={{ width: `var(--row-label-width-px)` }} className="flex-shrink-0 pr-1 pt-2 text-xs font-medium text-primary text-right flex items-center justify-end">
+                <span>{label}</span>
+                <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 p-0 ml-1 flex-shrink-0" aria-label={`${type} date format help`}>
+                                <Info size={14} className="text-muted-foreground" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-background text-foreground border shadow-lg p-2 rounded-md max-w-xs" side="top" align="start">
+                           {tooltipContent}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
+            <div className="flex flex-grow items-center gap-2 pl-2">
                 <div className="flex flex-wrap gap-2 items-center flex-grow">
                     {renderDateInputs(type as RowType)}
                 </div>
@@ -684,24 +761,6 @@ const ChronoSelectClient: React.FC = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                             <p>Add new {type} period</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider delayDuration={100}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 p-0 flex-shrink-0" aria-label={`${type} date format help`}>
-                                <Info size={18} className="text-muted-foreground" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-background text-foreground border shadow-lg p-2 rounded-md max-w-xs">
-                            <p className="text-xs font-medium">Format examples:</p>
-                            <ul className="list-disc list-inside text-xs pl-2">
-                                <li>Single month: <code className="bg-muted px-1 rounded">MM/YYYY</code> (e.g., <code className="bg-muted px-1 rounded">03/2023</code>)</li>
-                                <li>Date range: <code className="bg-muted px-1 rounded">MM/YYYY - MM/YYYY</code> (e.g., <code className="bg-muted px-1 rounded">01/2023 - 05/2023</code>)</li>
-                            </ul>
-                            <p className="text-xs mt-1">Dates must be within the displayed timeline.</p>
-                            <p className="text-xs mt-1">Only numbers, <code className="bg-muted px-1 rounded">/</code>, <code className="bg-muted px-1 rounded">-</code>, and spaces are allowed.</p>
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
@@ -720,4 +779,6 @@ const ChronoSelectClient: React.FC = () => {
 };
 
 export default ChronoSelectClient;
+    
+
     
