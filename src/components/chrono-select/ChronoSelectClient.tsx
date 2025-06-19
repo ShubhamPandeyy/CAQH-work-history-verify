@@ -7,7 +7,7 @@ import TimelineRow from './TimelineRow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Settings } from 'lucide-react';
+import { RotateCcw, Settings, HelpCircle } from 'lucide-react';
 import { getSelectedRanges, parseDateRangeString, getMonthIdsInRange, getMonthsDurationInDateRange } from '@/lib/chrono-utils';
 import {
   Sheet,
@@ -227,24 +227,24 @@ const ChronoSelectClient: React.FC = () => {
   
   useEffect(() => {
     if (timelineMonths.length === 0 || significantGapThresholdMonths <= 0) {
-      setWorkInternalGapMonths(new Set());
-      setGapStatusMessage('No employment gap found. There is continuous employment from first working date.');
-      return;
+        setWorkInternalGapMonths(new Set());
+        setGapStatusMessage('No employment gap found. There is continuous employment from first working date.');
+        return;
     }
 
     let currentStatusMessage = 'No employment gap found. There is continuous employment from first working date.';
     const newInternalGapMonthsForOutline = new Set<string>();
     
-    let hasExplicitLongExplainedGap = false; 
+    let hasExplicitLongExplainedGapRelevantToWork = false; 
     let hasAtLeastOneSignificantUnexplainedGap = false;
-    let hadAnySignificantPotentialGapsAtAll = false;
+    let hadAnySignificantPotentialGapsAtAllRelevantToWork = false; 
     
     let firstSelectedWorkMonthIndex = -1;
     if (workSelectedMonths.size > 0) {
         for (let i = 0; i < timelineMonths.length; i++) {
             if (workSelectedMonths.has(timelineMonths[i].id)) {
-            firstSelectedWorkMonthIndex = i;
-            break;
+                firstSelectedWorkMonthIndex = i;
+                break;
             }
         }
     }
@@ -252,16 +252,15 @@ const ChronoSelectClient: React.FC = () => {
     for (const gapRange of gapDateRanges) {
         const gapDuration = getMonthsDurationInDateRange(gapRange, timelineMonths);
         if (gapDuration >= significantGapThresholdMonths) {
-            // A long gap in Gap History is relevant if no work is selected, or if it's concurrent with/after first work month
             if (firstSelectedWorkMonthIndex === -1 || timelineMonths.findIndex(m => m.id === gapRange.end.id) >= firstSelectedWorkMonthIndex) {
-                 hasExplicitLongExplainedGap = true;
-                 break; 
+                hasExplicitLongExplainedGapRelevantToWork = true;
+                break; 
             }
         }
     }
     
-    if (firstSelectedWorkMonthIndex === -1) { // No work selected
-      if (hasExplicitLongExplainedGap) {
+    if (firstSelectedWorkMonthIndex === -1) { 
+      if (hasExplicitLongExplainedGapRelevantToWork) { 
         currentStatusMessage = 'Employment gap found with an explanation.';
       } else {
         currentStatusMessage = 'No employment gap found. There is continuous employment from first working date.';
@@ -271,7 +270,6 @@ const ChronoSelectClient: React.FC = () => {
       return;
     }
     
-    // Work IS selected, proceed to analyze potential work gaps
     const unselectedWorkMonthIds = new Set(timelineMonths.map(m => m.id));
     workSelectedMonths.forEach(id => unselectedWorkMonthIds.delete(id));
 
@@ -298,13 +296,12 @@ const ChronoSelectClient: React.FC = () => {
       const gapStartIndexInTimeline = timelineMonths.findIndex(m => m.id === potentialGapMonthData[0].id);
       const gapEndIndexInTimeline = timelineMonths.findIndex(m => m.id === potentialGapMonthData[potentialGapMonthData.length - 1].id);
       
-      // CRUCIAL: Ignore any potential gap that occurs entirely BEFORE the first selected work month
-      if (firstSelectedWorkMonthIndex !== -1 && gapEndIndexInTimeline < firstSelectedWorkMonthIndex) {
+      if (gapEndIndexInTimeline < firstSelectedWorkMonthIndex) {
         continue; 
       }
       
       if (potentialGapMonthData.length >= significantGapThresholdMonths) {
-        hadAnySignificantPotentialGapsAtAll = true; 
+        hadAnySignificantPotentialGapsAtAllRelevantToWork = true; 
         
         const unexplainedPortionOfThisGap = potentialGapMonthData.filter(
           m => !gapSelectedMonths.has(m.id) 
@@ -312,17 +309,14 @@ const ChronoSelectClient: React.FC = () => {
 
         if (unexplainedPortionOfThisGap.length >= significantGapThresholdMonths) {
           hasAtLeastOneSignificantUnexplainedGap = true;
-          // Add to outline only if it's at/after first work selection (or if no work selected, which is handled above)
-          if (firstSelectedWorkMonthIndex === -1 || gapStartIndexInTimeline >= firstSelectedWorkMonthIndex) {
-             unexplainedPortionOfThisGap.forEach(m => newInternalGapMonthsForOutline.add(m.id));
-          }
+          unexplainedPortionOfThisGap.forEach(m => newInternalGapMonthsForOutline.add(m.id));
         }
       }
     }
 
     if (hasAtLeastOneSignificantUnexplainedGap) {
       currentStatusMessage = 'Employment gap found without any explanation > Consider making outreach to the provider for explanation.';
-    } else if (hasExplicitLongExplainedGap || hadAnySignificantPotentialGapsAtAll) { 
+    } else if (hasExplicitLongExplainedGapRelevantToWork || hadAnySignificantPotentialGapsAtAllRelevantToWork) { 
       currentStatusMessage = 'Employment gap found with an explanation.';
     } else { 
       currentStatusMessage = 'No employment gap found. There is continuous employment from first working date.';
@@ -338,13 +332,76 @@ const ChronoSelectClient: React.FC = () => {
     return <div className="flex justify-center items-center h-64"><p>Loading timeline...</p></div>;
   }
 
+  const helpArticleHtml = `
+    <h3 class="text-lg font-semibold mb-3 text-primary">Quick Guide: Pandey's Work History Visualizer</h3>
+    <p class="mb-2 text-sm">
+        Welcome! This tool helps you visually track your work and gap history over the last 5 years.
+    </p>
+
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">1. Understanding the Timeline:</h4>
+    <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
+        <li>The main grid shows months for the past 5 years, plus the current month.</li>
+        <li>Year labels appear above their respective 12-month segments.</li>
+    </ul>
+
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">2. Selecting Periods:</h4>
+    <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
+        <li><strong>Work History Row:</strong> Click a start month, then an end month to mark a work period. Selected work periods are green.</li>
+        <li><strong>Gap History Row:</strong> Similarly, click to mark periods when you were not working. Selected gap periods are brown.</li>
+        <li>You can define multiple, separate ranges in both rows.</li>
+    </ul>
+
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">3. Date Inputs:</h4>
+    <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
+        <li>Selections on the timeline automatically create date range inputs (e.g., "MM/YYYY - MM/YYYY") below.</li>
+        <li>You can also manually type or edit these date inputs. Changes here will reflect back on the timeline.</li>
+    </ul>
+
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">4. Resetting:</h4>
+    <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
+        <li>Use the "Reset" icon (circular arrow) at the end of each row to clear all selections for that specific row.</li>
+    </ul>
+
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">5. Gap Analysis:</h4>
+    <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
+        <li>The tool automatically analyzes your entries to identify significant employment gaps.</li>
+        <li>A "significant gap" is a period not covered by "Work History" that meets a minimum length (configurable in Settings, defaults to 6 months).</li>
+        <li><strong>Red Outlines:</strong> Significant unexplained gaps <em>within or after</em> your declared "Work History" are highlighted with a red outline on the "Work History" timeline.</li>
+        <li><strong>Status Messages:</strong> A message at the bottom provides an overall status.</li>
+    </ul>
+
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">6. Settings (Cog Icon <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings inline align-baseline"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>):</h4>
+    <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
+        <li>Adjust the "Minimum Significant Gap (Months)" to define what constitutes a significant gap. This setting is saved for your next visit.</li>
+    </ul>
+
+    <p class="mt-4 text-xs text-muted-foreground opacity-80">
+        <strong>Important Note:</strong> This visualizer is an aid. Always review your entries and the timeline carefully to ensure accuracy.
+    </p>
+  `;
+
+
   return (
     <div className="space-y-1 w-full" style={{
         ['--row-label-width-px' as string]: `${ROW_LABEL_WIDTH_PX}px`,
         ['--reset-button-width-px' as string]: `${RESET_BUTTON_WIDTH_PX}px`,
         ['--reset-button-margin-px' as string]: `${RESET_BUTTON_MARGIN_PX}px`,
     }}>
-      <div className="flex justify-end mb-4 mr-1"> {/* Adjusted margin for alignment */}
+      <div className="flex justify-end items-center mb-4 mr-1 space-x-2">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" aria-label="Help & Usage Guide">
+              <HelpCircle className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-full sm:w-3/4 md:w-1/2 lg:w-1/3 overflow-y-auto">
+            <SheetHeader className="mb-4">
+              <SheetTitle>Help & Usage Guide</SheetTitle>
+            </SheetHeader>
+            <div className="p-4 space-y-2" dangerouslySetInnerHTML={{ __html: helpArticleHtml }} />
+          </SheetContent>
+        </Sheet>
+
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Timeline Settings">
@@ -385,7 +442,7 @@ const ChronoSelectClient: React.FC = () => {
                   className="text-sm w-full"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Defines the minimum number of consecutive unselected months to be considered a significant gap. Defaults to 6.
+                  Defines the minimum number of consecutive unselected months to be considered a significant gap. Defaults to 6. Accepts values between 1 and 60.
                 </p>
               </div>
             </div>
@@ -506,8 +563,8 @@ const ChronoSelectClient: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="pt-[100px] text-center text-muted-foreground text-sm">
-        <p>{gapStatusMessage}</p>
+      <div className="pt-[100px] text-center">
+        <p className="text-muted-foreground text-sm">{gapStatusMessage}</p>
         <p className="mt-4 text-xs text-muted-foreground opacity-70">
           Note: This visualizer is a tool to aid in tracking history. Please review all entries and the timeline carefully to ensure accuracy.
         </p>
@@ -526,3 +583,6 @@ export default ChronoSelectClient;
     
 
 
+
+
+    
