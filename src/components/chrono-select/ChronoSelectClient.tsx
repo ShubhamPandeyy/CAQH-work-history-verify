@@ -7,7 +7,7 @@ import TimelineRow from './TimelineRow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Settings, HelpCircle, PlusCircle, Info } from 'lucide-react';
+import { RotateCcw, Settings, HelpCircle, PlusCircle, Info, X } from 'lucide-react';
 import { getSelectedRanges, parseDateRangeString, getMonthIdsInRange, getMonthsDurationInDateRange } from '@/lib/chrono-utils';
 import { cn } from "@/lib/utils";
 import {
@@ -284,7 +284,7 @@ const ChronoSelectClient: React.FC = () => {
 
     if (currentValue.trim() === '') {
       setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
-      if (isPending) {
+      if (isPending) { // A pending input that's cleared on blur is removed
         setPendingInputs(prev => prev.filter(id => id !== rangeId));
         setRangeInputValues(prev => {
           const newState = {...prev};
@@ -296,17 +296,17 @@ const ChronoSelectClient: React.FC = () => {
             delete newState[rangeId];
             return newState;
         });
-      } else if (originalRange && !isDefaultInput) { // Don't auto-remove selection for default input on empty
+      } else if (originalRange && !isDefaultInput) { // An existing range, if cleared, removes its selection
         setSelectedMonths(prevSelected => {
           const newSelected = new Set(prevSelected);
           const oldMonthsToRemove = getMonthIdsInRange(originalRange.start.id, originalRange.end.id, timelineMonths);
           oldMonthsToRemove.forEach(id => newSelected.delete(id));
           return newSelected;
         });
-      } else if (isDefaultInput) {
+      } else if (isDefaultInput) { // If default input is cleared, just ensure its value is empty in state
          setRangeInputValues(prev => {
             const newState = { ...prev };
-            delete newState[rangeId];
+            delete newState[rangeId]; // Or set to '', which might be handled by the component structure
             return newState;
         });
       }
@@ -328,7 +328,7 @@ const ChronoSelectClient: React.FC = () => {
       if (isPending) {
         setPendingInputs(prev => prev.filter(id => id !== rangeId));
       }
-      if (isDefaultInput) { // Clear the default input's value from state after successful commit
+      if (isDefaultInput) { 
          setRangeInputValues(prev => {
             const newState = { ...prev };
             delete newState[rangeId];
@@ -337,7 +337,7 @@ const ChronoSelectClient: React.FC = () => {
       }
     } else {
       setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'invalid' }));
-      if (!isPending && !isDefaultInput && originalRange) { // Don't remove selection if default input is invalid
+      if (!isPending && !isDefaultInput && originalRange) { 
         setSelectedMonths(prevSelected => {
             const newSelected = new Set(prevSelected);
             const oldMonthsToRemove = getMonthIdsInRange(originalRange.start.id, originalRange.end.id, timelineMonths);
@@ -358,6 +358,40 @@ const ChronoSelectClient: React.FC = () => {
       setGapRangeInputValues(prev => ({...prev, [tempId]: ''}));
     }
     setInputValidationStatus(prev => ({...prev, [tempId]: 'neutral'}));
+  };
+
+  const handleClearInput = (rangeId: string, type: RowType) => {
+    const isWork = type === 'work';
+    const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
+    const dateRanges = isWork ? workDateRanges : gapDateRanges;
+    const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
+    const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
+    const setPendingInputs = isWork ? setPendingWorkInputs : setGapPendingInputs;
+  
+    setInputValues(prev => ({ ...prev, [rangeId]: '' }));
+    setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
+  
+    const existingRange = dateRanges.find(r => r.id === rangeId);
+    if (existingRange) {
+      setSelectedMonths(prevSelected => {
+        const newSelected = new Set(prevSelected);
+        const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
+        monthsToRemove.forEach(id => newSelected.delete(id));
+        return newSelected;
+      });
+    } else if (pendingInputs.includes(rangeId)) {
+      setPendingInputs(prev => prev.filter(id => id !== rangeId));
+      setInputValues(prev => {
+        const newState = { ...prev };
+        delete newState[rangeId];
+        return newState;
+      });
+      setInputValidationStatus(prev => {
+        const newState = { ...prev };
+        delete newState[rangeId];
+        return newState;
+      });
+    }
   };
 
 
@@ -520,21 +554,21 @@ const ChronoSelectClient: React.FC = () => {
 
   const workInfoTooltipContent = (
     <div className="space-y-1.5 p-2 max-w-xs">
-      <p className="text-sm font-semibold text-foreground">Work Period Input</p>
+      <p className="text-sm font-semibold text-foreground">Work Period Input Guide</p>
       <p className="text-xs text-muted-foreground">
         Enter dates for your work periods. Use the format <code className="bg-muted px-1 py-0.5 rounded text-xs">MM/YYYY</code>.
       </p>
       <div className="mt-1">
-        <p className="text-xs text-muted-foreground font-medium">For a single month:</p>
+        <p className="text-xs text-muted-foreground font-medium">For a single month (e.g., March 2023):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">03/2023</code>
       </div>
       <div className="mt-1.5">
-        <p className="text-xs text-muted-foreground font-medium">For a date range:</p>
+        <p className="text-xs text-muted-foreground font-medium">For a date range (e.g., Jan 2023 to May 2023):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">01/2023 - 05/2023</code>
       </div>
       <p className="text-xs text-muted-foreground pt-1.5">
         Allowed characters: numbers, <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code>, <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code>, and space.
-        The tool will try to auto-add <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code> as you type.
+        The tool will assist with <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code> as you type.
       </p>
       <p className="text-xs text-muted-foreground pt-1">Dates must be within the displayed 5-year timeline.</p>
     </div>
@@ -542,16 +576,16 @@ const ChronoSelectClient: React.FC = () => {
   
   const gapInfoTooltipContent = (
      <div className="space-y-1.5 p-2 max-w-xs">
-      <p className="text-sm font-semibold text-foreground">Gap Period Input</p>
+      <p className="text-sm font-semibold text-foreground">Gap Period Input Guide</p>
       <p className="text-xs text-muted-foreground">
-        Enter dates for periods when you were not working. Use format <code className="bg-muted px-1 py-0.5 rounded text-xs">MM/YYYY</code>.
+        Enter dates for non-working periods. Use format <code className="bg-muted px-1 py-0.5 rounded text-xs">MM/YYYY</code>.
       </p>
       <div className="mt-1">
-        <p className="text-xs text-muted-foreground font-medium">E.g., one month gap:</p>
+        <p className="text-xs text-muted-foreground font-medium">For a one-month gap (e.g., July 2022):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">07/2022</code>
       </div>
       <div className="mt-1.5">
-        <p className="text-xs text-muted-foreground font-medium">E.g., multi-month gap:</p>
+        <p className="text-xs text-muted-foreground font-medium">For a multi-month gap (e.g., Nov 2023 to Feb 2024):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">11/2023 - 02/2024</code>
       </div>
       <p className="text-xs text-muted-foreground pt-1.5">
@@ -571,74 +605,60 @@ const ChronoSelectClient: React.FC = () => {
 
     const allInputElements: JSX.Element[] = [];
 
-    ranges.forEach((range) => {
-        const id = range.id;
-        const value = inputValues[id] || range.text || '';
+    const createInputJsx = (id: string, value: string, isDefault: boolean, index: number) => {
         const status = inputValidationStatus[id] || 'neutral';
-        let inputClassName = "text-sm w-48";
+        let inputClassName = "text-sm w-48 pr-8"; // Added pr-8 for clear button
         if (status === 'valid') {
             inputClassName = cn(inputClassName, "border-green-500 ring-1 ring-green-500 focus-visible:ring-green-500");
         } else if (status === 'invalid') {
             inputClassName = cn(inputClassName, "border-red-500 ring-1 ring-red-500 focus-visible:ring-red-500");
         }
-        allInputElements.push(
-            <Input
-              key={id}
-              type="text"
-              value={value}
-              onChange={(e) => handleRangeInputChange(id, e.target.value, type)}
-              onBlur={(e) => handleRangeInputBlur(id, e.target.value, type)}
-              placeholder="MM/YYYY - MM/YYYY"
-              className={inputClassName}
-              aria-label={`${type} date range input ${ranges.indexOf(range) + 1}`}
-            />
+        return (
+            <div key={id} className="relative flex items-center">
+                <Input
+                  type="text"
+                  value={value}
+                  onChange={(e) => handleRangeInputChange(id, e.target.value, type)}
+                  onBlur={(e) => handleRangeInputBlur(id, e.target.value, type)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleRangeInputBlur(id, (e.target as HTMLInputElement).value, type);
+                    }
+                  }}
+                  placeholder="MM/YYYY - MM/YYYY"
+                  className={inputClassName}
+                  aria-label={`${type} date range input ${isDefault ? 'new' : index + 1}`}
+                />
+                {value && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleClearInput(id, type)}
+                    aria-label={`Clear ${type} date range ${id}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+            </div>
         );
+    };
+    
+    ranges.forEach((range, index) => {
+        const id = range.id;
+        const value = inputValues[id] || range.text || '';
+        allInputElements.push(createInputJsx(id, value, false, index));
     });
 
     pendingInputs.forEach((id, index) => {
         const value = inputValues[id] || '';
-        const status = inputValidationStatus[id] || 'neutral';
-        let inputClassName = "text-sm w-48";
-        if (status === 'valid') {
-            inputClassName = cn(inputClassName, "border-green-500 ring-1 ring-green-500 focus-visible:ring-green-500");
-        } else if (status === 'invalid') {
-            inputClassName = cn(inputClassName, "border-red-500 ring-1 ring-red-500 focus-visible:ring-red-500");
-        }
-         allInputElements.push(
-            <Input
-              key={id}
-              type="text"
-              value={value}
-              onChange={(e) => handleRangeInputChange(id, e.target.value, type)}
-              onBlur={(e) => handleRangeInputBlur(id, e.target.value, type)}
-              placeholder="MM/YYYY - MM/YYYY"
-              className={inputClassName}
-              aria-label={`${type} new date range input ${index + 1}`}
-            />
-        );
+        allInputElements.push(createInputJsx(id, value, false, ranges.length + index));
     });
     
     if (allInputElements.length === 0) {
         const value = inputValues[defaultInputId] || '';
-        const status = inputValidationStatus[defaultInputId] || 'neutral';
-        let inputClassName = "text-sm w-48";
-        if (status === 'valid') {
-            inputClassName = cn(inputClassName, "border-green-500 ring-1 ring-green-500 focus-visible:ring-green-500");
-        } else if (status === 'invalid') {
-            inputClassName = cn(inputClassName, "border-red-500 ring-1 ring-red-500 focus-visible:ring-red-500");
-        }
-        allInputElements.push(
-            <Input
-              key={defaultInputId}
-              type="text"
-              value={value}
-              onChange={(e) => handleRangeInputChange(defaultInputId, e.target.value, type)}
-              onBlur={(e) => handleRangeInputBlur(defaultInputId, e.target.value, type)}
-              placeholder="MM/YYYY - MM/YYYY"
-              className={inputClassName}
-              aria-label={`New ${type} date range input`}
-            />
-        );
+        allInputElements.push(createInputJsx(defaultInputId, value, true, 0));
     }
 
     return allInputElements;
@@ -658,7 +678,7 @@ const ChronoSelectClient: React.FC = () => {
               <HelpCircle className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto">
+          <SheetContent side="left" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl overflow-y-auto">
             <SheetHeader className="mb-4">
               <SheetTitle>Help & Usage Guide</SheetTitle>
             </SheetHeader>
@@ -797,8 +817,8 @@ const ChronoSelectClient: React.FC = () => {
                     </Tooltip>
                 </TooltipProvider>
             </div>
-            <div className="flex items-center gap-2 pl-2 flex-grow">
-                <div className="flex flex-wrap gap-2 items-center"> {/* Removed flex-grow */}
+            <div className="flex items-center gap-2 pl-2">
+                <div className="flex flex-wrap gap-2 items-center">
                     {renderDateInputs(type as RowType)}
                 </div>
                 <TooltipProvider delayDuration={100}>
