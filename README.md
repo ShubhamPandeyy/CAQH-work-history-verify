@@ -1,5 +1,5 @@
 
-# Pandey's Work History Visualizer: Advanced Temporal Analysis Platform
+# Pandey's Work History Visualizer: Advanced Temporal Analysis Platform 🚀
 
 **Visualize, Analyze, and Manage Complex Work & Gap Histories with Unprecedented Precision.**
 
@@ -22,8 +22,7 @@ This application is built upon a robust, modern technology stack, ensuring perfo
 
 ## ✨ Advanced Feature Deep Dive
 
-### 1. Dynamic Temporal Grid Engine
-
+### 1. Dynamic Temporal Grid Engine 🗓️
 At its core, the visualizer features a high-fidelity temporal grid:
 
 *   **Extended 5-Year Horizon**: Displays a rolling 61-month period (5 years + current month), offering comprehensive historical context.
@@ -31,51 +30,55 @@ At its core, the visualizer features a high-fidelity temporal grid:
 *   **Responsive Tile Rendering**: Month tiles dynamically resize based on available screen width, optimizing for visibility from dense information displays to more spacious views (minimum tile width enforced).
 *   **Adaptive Year Segmentation**: Clearly delineated year labels are intelligently positioned above their respective 12-month segments, with widths dynamically calculated to match the underlying tile configuration.
 
-### 2. Intuitive Range Interaction Subsystem
-
+### 2. Intuitive Range Interaction Subsystem 🖱️
 User interaction is designed for seamless and error-minimizing data entry:
 
-*   **Dual-Click Range Definition**: Users intuitively select start and end months with two clicks to define distinct work or gap periods. The intervening months are automatically highlighted.
-*   **Differentiated Visual State Indicators**:
-    *   Work history ranges are rendered in **Material Green**, providing clear visual separation.
-    *   Gap history ranges utilize **Material Brown**, ensuring immediate distinction.
-*   **Bidirectional Data Synchronization**:
-    *   Selections on the timeline instantly populate and update corresponding date range input fields.
-    *   Manual edits or new entries in the date input fields parse and reflect changes back onto the visual timeline, offering flexible data management.
+*   **Visual Timeline Selection**:
+    *   Users intuitively select start and end months with two clicks to define distinct work or gap periods. The intervening months are automatically highlighted.
+    *   Differentiated Visual State Indicators:
+        *   Work history ranges are rendered in **Material Green**, providing clear visual separation.
+        *   Gap history ranges utilize **Material Brown**, ensuring immediate distinction.
+*   **Manual Date Input Fields ✍️**:
+    *   Date ranges selected on the timeline are reflected in corresponding input fields below each timeline row.
+    *   Users can manually type or edit dates in these fields (format: `MM/YYYY` or `MM/YYYY - MM/YYYY`).
+    *   **Smart Input Assistance**: The system attempts to auto-insert `/` and ` - ` separators as you type and restricts input to valid characters.
+    *   **Add New Ranges**: A `+` button allows users to add new, empty date range input fields.
+    *   **Clear Inputs**: Each input field has an `X` button to quickly clear its content.
+    *   **Enter to Submit**: Pressing "Enter" in an input field validates and applies the date range.
+    *   **Visual Validation**: Input fields show a subtle green outline for valid, parsed dates and a red outline for invalid formats or out-of-bounds dates after editing.
+*   **Bidirectional Data Synchronization**: Changes made on the visual timeline update the input fields, and valid entries in the input fields update the timeline.
 
-### 3. Sophisticated Gap Analysis & Anomaly Detection Heuristics
-
+### 3. Sophisticated Gap Analysis & Anomaly Detection Heuristics 🧐
 The true power lies in its intelligent analysis capabilities:
 
-*   **Configurable Significance Threshold**: Users can define what constitutes a "significant gap" via a dedicated settings panel. This threshold (defaulting to 6 months, user-editable from 1-60 months) is persisted in local storage.
+*   **Configurable Significance Threshold**: Users can define what constitutes a "significant gap" via a dedicated settings panel (⚙️ icon). This threshold (defaulting to 6 months, user-editable from 1-60 months) is persisted in local storage.
 *   **Precise Unexplained Period Identification**: The system meticulously identifies any periods within the relevant timeline scope not explicitly covered by "Work History" or "Gap History" entries.
 *   **Contextual Gap Classification**:
     *   Periods *before* the user's first declared "Work History" entry are generally not flagged as unexplained work gaps, respecting the user-defined employment start.
     *   The engine intelligently discerns between gaps explicitly declared by the user (in "Gap History") and potential undeclared gaps within or between "Work History" segments.
 *   **Targeted Visual Cues**: Significant unexplained gaps *within or subsequent to* the declared "Work History" are highlighted with a distinct outline on the "Work History" timeline itself, drawing immediate attention to areas requiring review.
 *   **Intelligent Status Messaging**: The application provides dynamic, contextual feedback based on its comprehensive analysis:
-    *   `"Employment gap found with an explanation."` (When significant non-work periods are adequately covered by "Gap History" entries).
-    *   `"Employment gap found without any explanation > Consider making outreach to the provider for explanation."` (When significant work gaps are detected without corresponding "Gap History" entries).
-    *   `"No employment gap found. There is continuous employment from first working date."` (When the work history is continuous or all non-work periods are below the significant threshold or explained).
+    *   `"Employment gap found with an explanation."`
+    *   `"Employment gap found without any explanation > Consider making outreach to the provider for explanation."`
+    *   `"No employment gap found. There is continuous employment from first working date."`
 
-### 4. User Configuration & Persistence Layer
+### 4. User Configuration & Help System 🛠️❓
+Empowering users with control and guidance:
 
-Empowering users with control over the analysis parameters:
-
-*   **Dedicated Settings Panel**: Accessed via a settings icon, a `Sheet` component slides out, providing a clean interface for configuration.
+*   **Dedicated Settings Panel (⚙️ Icon)**: Accessed via a settings icon, a `Sheet` component slides out from the right, providing a clean interface for adjusting the "Minimum Significant Gap (Months)" setting.
 *   **Persistent Gap Threshold**: The "Minimum Significant Gap (Months)" setting is stored in the browser's local storage, ensuring user preferences are retained across sessions.
 *   **Dynamic Logic Application**: All gap detection and status messaging algorithms dynamically utilize the current user-defined (or default) gap threshold.
+*   **Integrated Help Panel (❓ Icon)**: A help icon, located next to the settings icon, opens a slide-out `Sheet` from the left, displaying a user-friendly guide on how to use the visualizer's features.
+*   **Input Field Tooltips (ℹ️ Icon)**: Each date input section ("Work History Dates", "Gap History Dates") has an info icon providing a quick tooltip on the expected date format and input tips.
 
 ### 5. State Management & Reactivity
-
 Leveraging modern React patterns for an efficient and responsive application:
 
 *   **Optimized Hook Usage**: Extensive use of `useState`, `useEffect`, `useCallback`, `useMemo`, and `useLayoutEffect` ensures efficient state management, memoization of expensive calculations, and precise DOM updates.
 *   **Client-Side Rendering**: All interactions and timeline rendering are handled client-side for a fast, application-like experience.
 
 ### 6. Data Integrity & Reset Mechanisms
-
-*   **Granular Reset Controls**: Dedicated reset buttons are provided for both the "Work History" and "Gap History" rows, allowing users to clear selections for a specific timeline independently.
+*   **Granular Reset Controls**: Dedicated reset buttons (🔄 icon) are provided for both the "Work History" and "Gap History" rows, allowing users to clear selections for a specific timeline independently.
 *   **User Guidance**: A clear disclaimer reminds users that the visualizer is an aid and encourages careful review of all entries for accuracy.
 
 ---
@@ -103,6 +106,7 @@ The visualizer prioritizes a clean, modern, and highly usable interface:
 *   **UI Library**: [React](https://reactjs.org/)
 *   **Component Library**: [ShadCN UI](https://ui.shadcn.com/)
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **Icons**: [Lucide React](https://lucide.dev/)
 *   **AI (Planned/Backend)**: [Genkit](https://firebase.google.com/docs/genkit)
 
 ---
@@ -171,6 +175,8 @@ The primary user configuration is the **Minimum Significant Gap** threshold:
 3.  Adjust this value (default is 6; accepts values between 1 and 60).
 4.  The setting is automatically saved to your browser's local storage and applied to all subsequent gap analyses.
 
+For help on using the application's features, click the **Help icon** (❓) next to the Settings icon.
+
 ---
 
 ## 🛣️ Potential Future Roadmap
@@ -189,3 +195,5 @@ This project is for demonstration and portfolio purposes. Please refer to the pr
 ---
 
 This README provides a comprehensive guide to Pandey's Work History Visualizer. Specific deployment or further configuration steps may vary based on your environment.
+
+    

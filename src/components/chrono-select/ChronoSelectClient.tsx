@@ -284,7 +284,7 @@ const ChronoSelectClient: React.FC = () => {
 
     if (currentValue.trim() === '') {
       setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
-      if (isPending) { // A pending input that's cleared on blur is removed
+      if (isPending) { 
         setPendingInputs(prev => prev.filter(id => id !== rangeId));
         setRangeInputValues(prev => {
           const newState = {...prev};
@@ -296,17 +296,17 @@ const ChronoSelectClient: React.FC = () => {
             delete newState[rangeId];
             return newState;
         });
-      } else if (originalRange && !isDefaultInput) { // An existing range, if cleared, removes its selection
+      } else if (originalRange && !isDefaultInput) { 
         setSelectedMonths(prevSelected => {
           const newSelected = new Set(prevSelected);
           const oldMonthsToRemove = getMonthIdsInRange(originalRange.start.id, originalRange.end.id, timelineMonths);
           oldMonthsToRemove.forEach(id => newSelected.delete(id));
           return newSelected;
         });
-      } else if (isDefaultInput) { // If default input is cleared, just ensure its value is empty in state
+      } else if (isDefaultInput) { 
          setRangeInputValues(prev => {
             const newState = { ...prev };
-            delete newState[rangeId]; // Or set to '', which might be handled by the component structure
+            newState[rangeId] = ''; 
             return newState;
         });
       }
@@ -331,7 +331,7 @@ const ChronoSelectClient: React.FC = () => {
       if (isDefaultInput) { 
          setRangeInputValues(prev => {
             const newState = { ...prev };
-            delete newState[rangeId];
+            newState[rangeId] = '';
             return newState;
         });
       }
@@ -367,6 +367,7 @@ const ChronoSelectClient: React.FC = () => {
     const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
     const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
     const setPendingInputs = isWork ? setPendingWorkInputs : setGapPendingInputs;
+    const isDefaultInput = rangeId.startsWith('default-');
   
     setInputValues(prev => ({ ...prev, [rangeId]: '' }));
     setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
@@ -391,6 +392,8 @@ const ChronoSelectClient: React.FC = () => {
         delete newState[rangeId];
         return newState;
       });
+    } else if (isDefaultInput) {
+       setInputValues(prev => ({ ...prev, [rangeId]: '' }));
     }
   };
 
@@ -503,96 +506,97 @@ const ChronoSelectClient: React.FC = () => {
   }
 
   const helpArticleHtml = `
-    <h3 class="text-lg font-semibold mb-3 text-primary">Quick Guide: Pandey's Work History Visualizer</h3>
+    <h3 class="text-lg font-semibold mb-3 text-primary">👋 Quick Guide: Pandey's Work History Visualizer</h3>
     <p class="mb-2 text-sm">
-        Welcome! This tool helps you visually track your work and gap history over the last 5 years.
+        Welcome! This tool helps you visually track your work and gap history over the last 5 years. Let's get started! 🚀
     </p>
 
-    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">1. Understanding the Timeline:</h4>
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">1. Understanding the Timeline 🗓️</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
         <li>The main grid shows months for the past 5 years, plus the current month.</li>
         <li>Year labels appear above their respective 12-month segments.</li>
     </ul>
 
-    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">2. Selecting Periods:</h4>
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">2. Selecting Periods 👇</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
-        <li><strong>Work History Row:</strong> Click a start month, then an end month to mark a work period. Selected work periods are green.</li>
-        <li><strong>Gap History Row:</strong> Similarly, click to mark periods when you were not working. Selected gap periods are brown.</li>
-        <li>You can define multiple, separate ranges in both rows.</li>
+        <li><strong>Work History Row (Green):</strong> Click a start month, then an end month to mark a work period.</li>
+        <li><strong>Gap History Row (Brown):</strong> Similarly, click to mark periods when you were not working.</li>
+        <li>You can define multiple, separate ranges in both rows. Easy peasy!</li>
     </ul>
 
-    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">3. Date Inputs:</h4>
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">3. Date Inputs ⌨️</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
         <li>Selections on the timeline automatically create date range inputs (e.g., "MM/YYYY - MM/YYYY") below.</li>
         <li>You can also manually type or edit these date inputs. Changes here will reflect back on the timeline.</li>
         <li>Use the "+" button to add a new date range input.</li>
-        <li>Inputs show a green border for valid dates, red for invalid after you edit them.</li>
+        <li>Inputs show a <span class="text-green-600 font-medium">green border</span> for valid dates, <span class="text-red-600 font-medium">red for invalid</span> after you edit them.</li>
+        <li>Press "Enter" to submit the date, or click the 'X' to clear an input.</li>
     </ul>
 
-    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">4. Resetting:</h4>
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">4. Resetting 🔄</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
         <li>Use the "Reset" icon (circular arrow) at the end of each row to clear all selections for that specific row.</li>
     </ul>
 
-    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">5. Gap Analysis:</h4>
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">5. Gap Analysis 📊</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
         <li>The tool automatically analyzes your entries to identify significant employment gaps.</li>
         <li>A "significant gap" is a period not covered by "Work History" that meets a minimum length (configurable in Settings, defaults to 6 months).</li>
         <li><strong>Red Outlines:</strong> Significant unexplained gaps <em>within or after</em> your declared "Work History" are highlighted with a red outline on the "Work History" timeline.</li>
-        <li><strong>Status Messages:</strong> A message at the bottom provides an overall status.</li>
+        <li><strong>Status Messages:</strong> A message at the bottom provides an overall status of your timeline.</li>
     </ul>
 
-    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">6. Settings (Cog Icon <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings inline align-baseline"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>):</h4>
+    <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">6. Settings ⚙️ (Cog Icon)</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
-        <li>Adjust the "Minimum Significant Gap (Months)" to define what constitutes a significant gap. This setting is saved for your next visit.</li>
+        <li>Adjust the "Minimum Significant Gap (Months)" to define what constitutes a significant gap. This setting is saved for your next visit!</li>
     </ul>
 
     <p class="mt-4 text-xs text-muted-foreground opacity-80">
-        <strong>Important Note:</strong> This visualizer is an aid. Always review your entries and the timeline carefully to ensure accuracy.
+        <strong>📌 Important Note:</strong> This visualizer is an aid. Always review your entries and the timeline carefully to ensure accuracy.
     </p>
   `;
 
   const workInfoTooltipContent = (
-    <div className="space-y-1.5 p-2 max-w-xs">
-      <p className="text-sm font-semibold text-foreground">Work Period Input Guide</p>
+    <div className="space-y-1.5 p-3 max-w-xs text-sm">
+      <p className="font-semibold text-foreground">Work Period Input Guide ✍️</p>
       <p className="text-xs text-muted-foreground">
         Enter dates for your work periods. Use the format <code className="bg-muted px-1 py-0.5 rounded text-xs">MM/YYYY</code>.
       </p>
-      <div className="mt-1">
+      <div className="mt-2">
         <p className="text-xs text-muted-foreground font-medium">For a single month (e.g., March 2023):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">03/2023</code>
       </div>
-      <div className="mt-1.5">
+      <div className="mt-2">
         <p className="text-xs text-muted-foreground font-medium">For a date range (e.g., Jan 2023 to May 2023):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">01/2023 - 05/2023</code>
       </div>
-      <p className="text-xs text-muted-foreground pt-1.5">
+      <p className="text-xs text-muted-foreground pt-2">
         Allowed characters: numbers, <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code>, <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code>, and space.
-        The tool will assist with <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code> as you type.
+        The tool will try to help by adding <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code> as you type.
       </p>
-      <p className="text-xs text-muted-foreground pt-1">Dates must be within the displayed 5-year timeline.</p>
+      <p className="text-xs text-muted-foreground pt-1.5">🗓️ Dates must be within the displayed 5-year timeline.</p>
     </div>
   );
   
   const gapInfoTooltipContent = (
-     <div className="space-y-1.5 p-2 max-w-xs">
-      <p className="text-sm font-semibold text-foreground">Gap Period Input Guide</p>
+     <div className="space-y-1.5 p-3 max-w-xs text-sm">
+      <p className="font-semibold text-foreground">Gap Period Input Guide 🚶</p>
       <p className="text-xs text-muted-foreground">
         Enter dates for non-working periods. Use format <code className="bg-muted px-1 py-0.5 rounded text-xs">MM/YYYY</code>.
       </p>
-      <div className="mt-1">
+      <div className="mt-2">
         <p className="text-xs text-muted-foreground font-medium">For a one-month gap (e.g., July 2022):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">07/2022</code>
       </div>
-      <div className="mt-1.5">
+      <div className="mt-2">
         <p className="text-xs text-muted-foreground font-medium">For a multi-month gap (e.g., Nov 2023 to Feb 2024):</p>
         <code className="block bg-muted px-1.5 py-0.5 rounded text-xs mt-0.5">11/2023 - 02/2024</code>
       </div>
-      <p className="text-xs text-muted-foreground pt-1.5">
+      <p className="text-xs text-muted-foreground pt-2">
         You can use: numbers, <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code>, <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code>, space.
-        Separators <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code> may be auto-inserted.
+        Separators <code className="bg-muted px-1 py-0.5 rounded text-xs">/</code> and <code className="bg-muted px-1 py-0.5 rounded text-xs">-</code> may be auto-inserted to help.
       </p>
-      <p className="text-xs text-muted-foreground pt-1">Ensure dates fall within the displayed timeline.</p>
+      <p className="text-xs text-muted-foreground pt-1.5">✅ Ensure dates fall within the displayed timeline.</p>
     </div>
   );
 
@@ -607,7 +611,7 @@ const ChronoSelectClient: React.FC = () => {
 
     const createInputJsx = (id: string, value: string, isDefault: boolean, index: number) => {
         const status = inputValidationStatus[id] || 'neutral';
-        let inputClassName = "text-sm w-48 pr-8"; // Added pr-8 for clear button
+        let inputClassName = "text-sm w-48 pr-8"; 
         if (status === 'valid') {
             inputClassName = cn(inputClassName, "border-green-500 ring-1 ring-green-500 focus-visible:ring-green-500");
         } else if (status === 'invalid') {
@@ -628,7 +632,7 @@ const ChronoSelectClient: React.FC = () => {
                   }}
                   placeholder="MM/YYYY - MM/YYYY"
                   className={inputClassName}
-                  aria-label={`${type} date range input ${isDefault ? 'new' : index + 1}`}
+                  aria-label={`${type} date range input ${isDefault && index === 0 ? 'default' : index + 1}`}
                 />
                 {value && (
                   <Button
@@ -680,7 +684,7 @@ const ChronoSelectClient: React.FC = () => {
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl overflow-y-auto">
             <SheetHeader className="mb-4">
-              <SheetTitle>Help & Usage Guide</SheetTitle>
+              <SheetTitle>Help & Usage Guide 📖</SheetTitle>
             </SheetHeader>
             <div className="p-4 space-y-2" dangerouslySetInnerHTML={{ __html: helpArticleHtml }} />
           </SheetContent>
@@ -694,7 +698,7 @@ const ChronoSelectClient: React.FC = () => {
           </SheetTrigger>
           <SheetContent side="right">
             <SheetHeader>
-              <SheetTitle>Timeline Settings</SheetTitle>
+              <SheetTitle>Timeline Settings ⚙️</SheetTitle>
               <SheetDescription>
                 Adjust parameters for the timeline display and gap calculation.
               </SheetDescription>
@@ -848,4 +852,6 @@ const ChronoSelectClient: React.FC = () => {
 };
 
 export default ChronoSelectClient;
+    
+
     
