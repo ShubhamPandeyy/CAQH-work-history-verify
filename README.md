@@ -3,7 +3,7 @@
 
 **Visualize, Analyze, and Manage Complex Work & Gap Histories with Unprecedented Precision.**
 
-Pandey's Work History Visualizer is a sophisticated web application engineered to provide users with an intuitive yet powerful platform for visually tracking, managing, and analyzing their employment and gap history over a dynamic 5-year rolling period. It transcends simple date tracking by incorporating intelligent gap detection, user-configurable parameters, and a highly responsive, aesthetically refined user interface.
+Pandey's Work History Visualizer is a sophisticated web application engineered to provide users with an intuitive yet powerful platform for visually tracking, managing, and analyzing their employment and gap history over a dynamic 5-year rolling period. It transcends simple date tracking by incorporating intelligent gap detection, user-configurable parameters, and a highly responsive, aesthetically refined user interface. *(Note: This README was generated with AI assistance to detail the project's capabilities.)*
 
 ---
 
@@ -16,7 +16,6 @@ This application is built upon a robust, modern technology stack, ensuring perfo
 *   **UI Library**: React - Powering a dynamic and reactive user interface.
 *   **Component Ecosystem**: ShadCN UI - Providing a suite of beautifully designed, accessible, and customizable components.
 *   **Styling Engine**: Tailwind CSS - Enabling rapid, utility-first styling with deep customization capabilities.
-*   **AI (Backend Integration)**: Genkit - Architected for future integration of AI-driven insights and analysis (currently focused on frontend visualization).
 
 ---
 
@@ -107,7 +106,6 @@ The visualizer prioritizes a clean, modern, and highly usable interface:
 *   **Component Library**: [ShadCN UI](https://ui.shadcn.com/)
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 *   **Icons**: [Lucide React](https://lucide.dev/)
-*   **AI (Planned/Backend)**: [Genkit](https://firebase.google.com/docs/genkit)
 
 ---
 
@@ -179,15 +177,6 @@ For help on using the application's features, click the **Help icon** (❓) next
 
 ---
 
-## 🛣️ Potential Future Roadmap
-
-*   **AI-Powered Resume Tailoring**: Integrate Genkit to analyze work history and suggest resume enhancements based on job descriptions.
-*   **Data Export/Import**: Allow users to export their timeline data (e.g., to JSON or CSV) and import it later.
-*   **Enhanced Reporting**: Generate printable summaries or reports of the work/gap history.
-*   **Cloud Synchronization**: Option to save timeline data to a secure cloud backend.
-
----
-
 ## 📜 License
 
 This project is for demonstration and portfolio purposes. Please refer to the project owner for licensing information if applicable.
@@ -195,5 +184,3 @@ This project is for demonstration and portfolio purposes. Please refer to the pr
 ---
 
 This README provides a comprehensive guide to Pandey's Work History Visualizer. Specific deployment or further configuration steps may vary based on your environment.
-
-    
