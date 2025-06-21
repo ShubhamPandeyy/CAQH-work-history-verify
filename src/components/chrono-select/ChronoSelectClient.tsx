@@ -7,7 +7,7 @@ import TimelineRow from './TimelineRow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Settings, HelpCircle, PlusCircle, Info, X } from 'lucide-react';
+import { RotateCcw, Settings, HelpCircle, PlusCircle, Info, X, User, Edit, Check } from 'lucide-react';
 import { getSelectedRanges, parseDateRangeString, getMonthIdsInRange, getMonthsDurationInDateRange } from '@/lib/chrono-utils';
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +24,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+
 
 const TOTAL_MONTHS = 61; // 5 years + 1 current month
 const ROW_LABEL_WIDTH_PX = 112;
@@ -31,7 +34,19 @@ const RESET_BUTTON_WIDTH_PX = 40;
 const RESET_BUTTON_MARGIN_PX = 8; // ml-2
 const SPACE_PX = 1; // Space between tiles
 const MIN_TILE_WIDTH_PX = 14;
+
+// Storage Keys
 const SIGNIFICANT_GAP_THRESHOLD_STORAGE_KEY = 'chronoSelectSignificantGapThreshold';
+const USER_NAME_STORAGE_KEY = 'chronoSelectUserName';
+const USER_EMAIL_STORAGE_KEY = 'chronoSelectUserEmail';
+const STATUS_MESSAGE_NO_GAP_KEY = 'chronoSelectStatusMessageNoGap';
+const STATUS_MESSAGE_UNEXPLAINED_GAP_KEY = 'chronoSelectStatusMessageUnexplainedGap';
+const STATUS_MESSAGE_EXPLAINED_GAP_KEY = 'chronoSelectStatusMessageExplainedGap';
+
+// Default Messages
+const DEFAULT_MSG_NO_GAP = 'No employment gap found. There is continuous employment from first working date.';
+const DEFAULT_MSG_UNEXPLAINED_GAP = 'Employment gap found without any explanation > Consider making outreach to the provider for explanation.';
+const DEFAULT_MSG_EXPLAINED_GAP = 'Employment gap found with an explanation.';
 
 
 const ChronoSelectClient: React.FC = () => {
@@ -55,9 +70,21 @@ const ChronoSelectClient: React.FC = () => {
 
   const [tileWidthPx, setTileWidthPx] = useState(MIN_TILE_WIDTH_PX);
   const timelineContentAreaRef = useRef<HTMLDivElement>(null);
-  const [gapStatusMessage, setGapStatusMessage] = useState<string>('No employment gap found. There is continuous employment from first working date.');
+  const [gapStatusMessage, setGapStatusMessage] = useState<string>(DEFAULT_MSG_NO_GAP);
+  
+  // Settings State
   const [significantGapThresholdMonths, setSignificantGapThresholdMonths] = useState<number>(6);
+  const [userName, setUserName] = useState<string>('Shubham');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
+  const [tempUserName, setTempUserName] = useState<string>('');
+  const [tempUserEmail, setTempUserEmail] = useState<string>('');
+  const [statusMsgNoGap, setStatusMsgNoGap] = useState<string>(DEFAULT_MSG_NO_GAP);
+  const [statusMsgUnexplained, setStatusMsgUnexplained] = useState<string>(DEFAULT_MSG_UNEXPLAINED_GAP);
+  const [statusMsgExplained, setStatusMsgExplained] = useState<string>(DEFAULT_MSG_EXPLAINED_GAP);
 
+
+  // Load all settings from localStorage on initial mount
   useEffect(() => {
     const storedThreshold = localStorage.getItem(SIGNIFICANT_GAP_THRESHOLD_STORAGE_KEY);
     if (storedThreshold) {
@@ -66,11 +93,26 @@ const ChronoSelectClient: React.FC = () => {
         setSignificantGapThresholdMonths(numThreshold);
       }
     }
+    const storedName = localStorage.getItem(USER_NAME_STORAGE_KEY);
+    if (storedName) setUserName(storedName);
+    const storedEmail = localStorage.getItem(USER_EMAIL_STORAGE_KEY);
+    if (storedEmail) setUserEmail(storedEmail);
+
+    const storedMsgNoGap = localStorage.getItem(STATUS_MESSAGE_NO_GAP_KEY);
+    if (storedMsgNoGap) setStatusMsgNoGap(storedMsgNoGap);
+    const storedMsgUnexplained = localStorage.getItem(STATUS_MESSAGE_UNEXPLAINED_GAP_KEY);
+    if (storedMsgUnexplained) setStatusMsgUnexplained(storedMsgUnexplained);
+    const storedMsgExplained = localStorage.getItem(STATUS_MESSAGE_EXPLAINED_GAP_KEY);
+    if (storedMsgExplained) setStatusMsgExplained(storedMsgExplained);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(SIGNIFICANT_GAP_THRESHOLD_STORAGE_KEY, String(significantGapThresholdMonths));
-  }, [significantGapThresholdMonths]);
+  // Save settings to localStorage whenever they change
+  useEffect(() => { localStorage.setItem(SIGNIFICANT_GAP_THRESHOLD_STORAGE_KEY, String(significantGapThresholdMonths)); }, [significantGapThresholdMonths]);
+  useEffect(() => { localStorage.setItem(USER_NAME_STORAGE_KEY, userName); }, [userName]);
+  useEffect(() => { localStorage.setItem(USER_EMAIL_STORAGE_KEY, userEmail); }, [userEmail]);
+  useEffect(() => { localStorage.setItem(STATUS_MESSAGE_NO_GAP_KEY, statusMsgNoGap); }, [statusMsgNoGap]);
+  useEffect(() => { localStorage.setItem(STATUS_MESSAGE_UNEXPLAINED_GAP_KEY, statusMsgUnexplained); }, [statusMsgUnexplained]);
+  useEffect(() => { localStorage.setItem(STATUS_MESSAGE_EXPLAINED_GAP_KEY, statusMsgExplained); }, [statusMsgExplained]);
 
 
   useEffect(() => {
@@ -372,7 +414,6 @@ const ChronoSelectClient: React.FC = () => {
     const isPending = pendingInputs.includes(rangeId);
     const isDefault = rangeId.startsWith('default-');
   
-    // Always clear the input's visual value and validation status first.
     setInputValues(prev => {
       const newState = { ...prev };
       if (isDefault) {
@@ -393,10 +434,7 @@ const ChronoSelectClient: React.FC = () => {
       return newState;
     });
   
-    // Then, perform the underlying state logic update.
     if (existingRange) {
-      // This is a committed range. Remove its months from the main selection state.
-      // This will trigger a useEffect to rebuild the derived dateRanges array.
       setSelectedMonths(prevSelected => {
         const newSelected = new Set(prevSelected);
         const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
@@ -404,21 +442,18 @@ const ChronoSelectClient: React.FC = () => {
         return newSelected;
       });
     } else if (isPending) {
-      // This is a non-committed input. Just remove it from the pending list.
       setPendingInputs(prev => prev.filter(id => id !== rangeId));
     }
-    // If it's the default input, clearing its value was sufficient. No other action needed.
   };
-
 
   useEffect(() => {
     if (timelineMonths.length === 0 || significantGapThresholdMonths <= 0) {
         setWorkInternalGapMonths(new Set());
-        setGapStatusMessage('No employment gap found. There is continuous employment from first working date.');
+        setGapStatusMessage(statusMsgNoGap);
         return;
     }
 
-    let currentStatusMessage = 'No employment gap found. There is continuous employment from first working date.';
+    let currentStatusMessage = statusMsgNoGap;
     const newInternalGapMonthsForOutline = new Set<string>();
 
     let hasExplicitLongExplainedGapRelevantToWork = false;
@@ -448,9 +483,9 @@ const ChronoSelectClient: React.FC = () => {
 
     if (firstSelectedWorkMonthIndex === -1) {
       if (hasExplicitLongExplainedGapRelevantToWork) {
-        currentStatusMessage = 'Employment gap found with an explanation.';
+        currentStatusMessage = statusMsgExplained;
       } else {
-        currentStatusMessage = 'No employment gap found. There is continuous employment from first working date.';
+        currentStatusMessage = statusMsgNoGap;
       }
       setWorkInternalGapMonths(new Set());
       setGapStatusMessage(currentStatusMessage);
@@ -501,17 +536,36 @@ const ChronoSelectClient: React.FC = () => {
     }
 
     if (hasAtLeastOneSignificantUnexplainedGap) {
-      currentStatusMessage = 'Employment gap found without any explanation > Consider making outreach to the provider for explanation.';
+      currentStatusMessage = statusMsgUnexplained;
     } else if (hasExplicitLongExplainedGapRelevantToWork || hadAnySignificantPotentialGapsAtAllRelevantToWork) {
-      currentStatusMessage = 'Employment gap found with an explanation.';
+      currentStatusMessage = statusMsgExplained;
     } else {
-      currentStatusMessage = 'No employment gap found. There is continuous employment from first working date.';
+      currentStatusMessage = statusMsgNoGap;
     }
 
     setWorkInternalGapMonths(newInternalGapMonthsForOutline);
     setGapStatusMessage(currentStatusMessage);
 
-  }, [workSelectedMonths, gapSelectedMonths, gapDateRanges, timelineMonths, significantGapThresholdMonths]);
+  }, [workSelectedMonths, gapSelectedMonths, gapDateRanges, timelineMonths, significantGapThresholdMonths, statusMsgNoGap, statusMsgExplained, statusMsgUnexplained]);
+
+
+  const handleStartEditProfile = () => {
+    setTempUserName(userName);
+    setTempUserEmail(userEmail);
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = () => {
+      setUserName(tempUserName);
+      setUserEmail(tempUserEmail);
+      setIsEditingProfile(false);
+  };
+
+  const handleResetMessages = () => {
+      setStatusMsgNoGap(DEFAULT_MSG_NO_GAP);
+      setStatusMsgUnexplained(DEFAULT_MSG_UNEXPLAINED_GAP);
+      setStatusMsgExplained(DEFAULT_MSG_EXPLAINED_GAP);
+  };
 
 
   if (timelineMonths.length === 0 || yearGroups.length === 0) {
@@ -562,6 +616,8 @@ const ChronoSelectClient: React.FC = () => {
     <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">6. Settings ⚙️ (Cog Icon)</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
         <li>Adjust the "Minimum Significant Gap (Months)" to define what constitutes a significant gap. This setting is saved for your next visit!</li>
+        <li>Customize the status messages for different gap scenarios.</li>
+        <li>Edit your display name for a personalized welcome.</li>
     </ul>
 
     <p class="mt-4 text-xs text-muted-foreground opacity-80">
@@ -703,13 +759,13 @@ const ChronoSelectClient: React.FC = () => {
           </SheetContent>
         </Sheet>
 
-        <Sheet>
+        <Sheet onOpenChange={(open) => !open && setIsEditingProfile(false)}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Timeline Settings">
               <Settings className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right">
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
             <SheetHeader>
               <SheetTitle>Timeline Settings ⚙️</SheetTitle>
               <SheetDescription>
@@ -717,6 +773,46 @@ const ChronoSelectClient: React.FC = () => {
               </SheetDescription>
             </SheetHeader>
             <div className="p-4 space-y-6 mt-4">
+               <div className="space-y-4 rounded-lg border bg-background/50 p-4">
+                  {!isEditingProfile ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <User className="h-8 w-8 text-primary" />
+                        <span className="font-semibold text-lg">Welcome, {userName}</span>
+                      </div>
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                             <Button variant="ghost" size="icon" onClick={handleStartEditProfile} aria-label="Edit Profile">
+                                <Edit className="h-4 w-4" />
+                             </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit Profile</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg text-primary">Edit Profile</h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="user-name-input">Name</Label>
+                        <Input id="user-name-input" value={tempUserName} onChange={(e) => setTempUserName(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="user-email-input">Email</Label>
+                        <Input id="user-email-input" type="email" placeholder="example@email.com" value={tempUserEmail} onChange={(e) => setTempUserEmail(e.target.value)} />
+                      </div>
+                      <Button onClick={handleSaveProfile}>
+                        <Check className="mr-2 h-4 w-4" /> Save Profile
+                      </Button>
+                    </div>
+                  )}
+               </div>
+
+              <Separator />
+
               <div className="space-y-2">
                 <Label htmlFor="gap-threshold-input-sheet" className="text-sm font-medium">
                   Minimum Significant Gap (Months)
@@ -746,6 +842,40 @@ const ChronoSelectClient: React.FC = () => {
                   Defines the minimum number of consecutive unselected months to be considered a significant gap. Defaults to 6. Accepts values between 1 and 60.
                 </p>
               </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <Label className="text-base font-medium">Customize Status Messages</Label>
+                    <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={handleResetMessages}>
+                                    <RotateCcw className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Reset Messages to Default</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="msg-no-gap" className="text-sm font-normal text-muted-foreground">Message for No Gaps</Label>
+                    <Textarea id="msg-no-gap" value={statusMsgNoGap} onChange={(e) => setStatusMsgNoGap(e.target.value)} rows={3} className="text-sm"/>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="msg-explained-gap" className="text-sm font-normal text-muted-foreground">Message for Explained Gaps</Label>
+                    <Textarea id="msg-explained-gap" value={statusMsgExplained} onChange={(e) => setStatusMsgExplained(e.target.value)} rows={3} className="text-sm"/>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="msg-unexplained-gap" className="text-sm font-normal text-muted-foreground">Message for Unexplained Gaps</Label>
+                    <Textarea id="msg-unexplained-gap" value={statusMsgUnexplained} onChange={(e) => setStatusMsgUnexplained(e.target.value)} rows={4} className="text-sm"/>
+                </div>
+                <p className="text-xs text-muted-foreground text-center pt-2">Changes to messages are saved automatically.</p>
+              </div>
+
             </div>
           </SheetContent>
         </Sheet>
