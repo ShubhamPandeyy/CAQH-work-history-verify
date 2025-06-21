@@ -3,7 +3,7 @@
 
 > A personal project exploring complex state management and dynamic UI with React and Next.js. This tool is designed to help users visually map out and analyze their professional history with precision.
 
-As a developer, I'm always looking for interesting challenges. I built this visualizer as a deep dive into creating a highly interactive, stateful application. The goal was to build a tool that was not only functional but also intuitive and polished, tackling the complexities of date-range calculations, dynamic UI rendering, and persistent user settings.
+I built this visualizer as a deep dive into creating a highly interactive, stateful application. The goal was to build a tool that was not only functional but also intuitive and polished, tackling the complexities of date-range calculations, dynamic UI rendering, and persistent user settings.
 
 ---
 
