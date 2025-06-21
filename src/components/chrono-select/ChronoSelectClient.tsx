@@ -277,7 +277,7 @@ const ChronoSelectClient: React.FC = () => {
     
     const setSelectedMonths = type === 'work' ? setWorkSelectedMonths : setGapSelectedMonths;
     const dateRanges = type === 'work' ? workDateRanges : gapDateRanges;
-    const setPendingInputs = type === 'work' ? setPendingWorkInputs : setGapPendingInputs;
+    const setPendingInputs = type === 'work' ? setPendingWorkInputs : setPendingGapInputs;
     const setRangeInputValues = type === 'work' ? setWorkRangeInputValues : setGapRangeInputValues;
 
     const originalRange = dateRanges.find(r => r.id === rangeId);
@@ -366,7 +366,7 @@ const ChronoSelectClient: React.FC = () => {
     const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
     const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
     const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
-    const setPendingInputs = isWork ? setPendingWorkInputs : setGapPendingInputs;
+    const setPendingInputs = isWork ? setPendingWorkInputs : setPendingGapInputs;
   
     const existingRange = dateRanges.find(r => r.id === rangeId);
     const isPending = pendingInputs.includes(rangeId);
