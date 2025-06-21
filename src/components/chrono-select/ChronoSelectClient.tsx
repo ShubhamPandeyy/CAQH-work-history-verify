@@ -371,41 +371,43 @@ const ChronoSelectClient: React.FC = () => {
     const existingRange = dateRanges.find(r => r.id === rangeId);
     const isPending = pendingInputs.includes(rangeId);
     const isDefault = rangeId.startsWith('default-');
-
+  
+    // Always clear the input's visual value and validation status first.
+    setInputValues(prev => {
+      const newState = { ...prev };
+      if (isDefault) {
+        newState[rangeId] = '';
+      } else {
+        delete newState[rangeId];
+      }
+      return newState;
+    });
+  
+    setInputValidationStatus(prev => {
+      const newState = { ...prev };
+      if (isDefault) {
+        newState[rangeId] = 'neutral';
+      } else {
+        delete newState[rangeId];
+      }
+      return newState;
+    });
+  
+    // Then, perform the underlying state logic update.
     if (existingRange) {
+      // This is a committed range. Remove its months from the main selection state.
+      // This will trigger a useEffect to rebuild the derived dateRanges array.
       setSelectedMonths(prevSelected => {
         const newSelected = new Set(prevSelected);
         const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
         monthsToRemove.forEach(id => newSelected.delete(id));
         return newSelected;
       });
-      setInputValidationStatus(prev => {
-        const newState = { ...prev };
-        delete newState[rangeId];
-        return newState;
-      });
-      return;
-    }
-
-    if (isPending) {
+    } else if (isPending) {
+      // This is a non-committed input. Just remove it from the pending list.
       setPendingInputs(prev => prev.filter(id => id !== rangeId));
-      setInputValues(prev => {
-        const newState = { ...prev };
-        delete newState[rangeId];
-        return newState;
-      });
-      setInputValidationStatus(prev => {
-        const newState = { ...prev };
-        delete newState[rangeId];
-        return newState;
-      });
-      return;
     }
-
-    if (isDefault) {
-      setInputValues(prev => ({ ...prev, [rangeId]: '' }));
-      setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
-    }
+    // If it's the default input, clearing its value was sufficient. No other action needed.
   };
 
 
