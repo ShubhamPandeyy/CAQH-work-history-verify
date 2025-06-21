@@ -359,20 +359,19 @@ const ChronoSelectClient: React.FC = () => {
     }
     setInputValidationStatus(prev => ({...prev, [tempId]: 'neutral'}));
   };
-
+  
   const handleClearInput = (rangeId: string, type: RowType) => {
     const isWork = type === 'work';
-    const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
     const dateRanges = isWork ? workDateRanges : gapDateRanges;
-    const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
     const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
+    const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
+    const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
     const setPendingInputs = isWork ? setPendingWorkInputs : setGapPendingInputs;
-    const isDefaultInput = rangeId.startsWith('default-');
-  
-    setInputValues(prev => ({ ...prev, [rangeId]: '' }));
-    setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
   
     const existingRange = dateRanges.find(r => r.id === rangeId);
+    const isPending = pendingInputs.includes(rangeId);
+    const isDefault = rangeId.startsWith('default-');
+
     if (existingRange) {
       setSelectedMonths(prevSelected => {
         const newSelected = new Set(prevSelected);
@@ -380,7 +379,15 @@ const ChronoSelectClient: React.FC = () => {
         monthsToRemove.forEach(id => newSelected.delete(id));
         return newSelected;
       });
-    } else if (pendingInputs.includes(rangeId)) {
+      setInputValidationStatus(prev => {
+        const newState = { ...prev };
+        delete newState[rangeId];
+        return newState;
+      });
+      return;
+    }
+
+    if (isPending) {
       setPendingInputs(prev => prev.filter(id => id !== rangeId));
       setInputValues(prev => {
         const newState = { ...prev };
@@ -392,8 +399,12 @@ const ChronoSelectClient: React.FC = () => {
         delete newState[rangeId];
         return newState;
       });
-    } else if (isDefaultInput) {
-       setInputValues(prev => ({ ...prev, [rangeId]: '' }));
+      return;
+    }
+
+    if (isDefault) {
+      setInputValues(prev => ({ ...prev, [rangeId]: '' }));
+      setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
     }
   };
 
