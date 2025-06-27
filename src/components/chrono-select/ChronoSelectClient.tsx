@@ -313,14 +313,15 @@ const ChronoSelectClient: React.FC = () => {
   };
 
   const handleRangeInputBlur = (rangeId: string, currentValue: string, type: RowType) => {
-    const isPending = (type === 'work' ? pendingWorkInputs : pendingGapInputs).includes(rangeId);
+    const isWork = type === 'work';
+    const isPending = (isWork ? pendingWorkInputs : pendingGapInputs).includes(rangeId);
     const isDefaultInput = rangeId.startsWith('default-');
     const parsed = parseDateRangeString(currentValue, timelineMonths);
     
-    const setSelectedMonths = type === 'work' ? setWorkSelectedMonths : setGapSelectedMonths;
-    const dateRanges = type === 'work' ? workDateRanges : gapDateRanges;
-    const setPendingInputs = type === 'work' ? setPendingWorkInputs : setPendingGapInputs;
-    const setRangeInputValues = type === 'work' ? setWorkRangeInputValues : setGapRangeInputValues;
+    const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
+    const dateRanges = isWork ? workDateRanges : gapDateRanges;
+    const setPendingInputs = isWork ? setPendingWorkInputs : setPendingGapInputs;
+    const setRangeInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
 
     const originalRange = dateRanges.find(r => r.id === rangeId);
 
@@ -409,40 +410,47 @@ const ChronoSelectClient: React.FC = () => {
     const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
     const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
     const setPendingInputs = isWork ? setPendingWorkInputs : setPendingGapInputs;
-  
+
     const existingRange = dateRanges.find(r => r.id === rangeId);
     const isPending = pendingInputs.includes(rangeId);
     const isDefault = rangeId.startsWith('default-');
-  
+
     setInputValues(prev => {
-      const newState = { ...prev };
-      if (isDefault) {
+        const newState = { ...prev };
         newState[rangeId] = '';
-      } else {
-        delete newState[rangeId];
-      }
-      return newState;
+        if (!isDefault) {
+            // Keep it in the inputValues map, just cleared. The logic below will remove it if it's pending.
+        }
+        return newState;
     });
-  
+
     setInputValidationStatus(prev => {
-      const newState = { ...prev };
-      if (isDefault) {
+        const newState = { ...prev };
         newState[rangeId] = 'neutral';
-      } else {
-        delete newState[rangeId];
-      }
-      return newState;
+        return newState;
     });
-  
+
     if (existingRange) {
-      setSelectedMonths(prevSelected => {
-        const newSelected = new Set(prevSelected);
-        const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
-        monthsToRemove.forEach(id => newSelected.delete(id));
-        return newSelected;
-      });
-    } else if (isPending) {
-      setPendingInputs(prev => prev.filter(id => id !== rangeId));
+        setSelectedMonths(prevSelected => {
+            const newSelected = new Set(prevSelected);
+            const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
+            monthsToRemove.forEach(id => newSelected.delete(id));
+            return newSelected;
+        });
+    }
+
+    if (isPending) {
+        setPendingInputs(prev => prev.filter(id => id !== rangeId));
+        setInputValues(prev => {
+            const newState = { ...prev };
+            delete newState[rangeId];
+            return newState;
+        });
+        setInputValidationStatus(prev => {
+            const newState = { ...prev };
+            delete newState[rangeId];
+            return newState;
+        });
     }
   };
 
@@ -986,9 +994,6 @@ const ChronoSelectClient: React.FC = () => {
       </div>
       <div className="pt-[100px] text-center">
         <p className="text-muted-foreground text-sm">{gapStatusMessage}</p>
-        <p className="mt-4 text-xs text-muted-foreground opacity-70">
-          Note: This visualizer is a tool to aid in tracking history. Please review all entries and the timeline carefully to ensure accuracy.
-        </p>
       </div>
     </div>
   );
