@@ -70,7 +70,7 @@ const ChronoSelectClient: React.FC = () => {
 
   const [tileWidthPx, setTileWidthPx] = useState(MIN_TILE_WIDTH_PX);
   const timelineContentAreaRef = useRef<HTMLDivElement>(null);
-  const [gapStatusMessage, setGapStatusMessage] = useState<string>(DEFAULT_MSG_NO_GAP);
+  const [gapStatusMessage, setGapStatusMessage] = useState<string>('');
   const [gapStatusType, setGapStatusType] = useState<'no-gap' | 'explained-gap' | 'unexplained-gap'>('no-gap');
   
   // Settings State
@@ -416,8 +416,10 @@ const ChronoSelectClient: React.FC = () => {
     const isPending = pendingInputs.includes(rangeId);
     const isDefault = rangeId.startsWith('default-');
 
-    // Case 1: Clearing an existing, saved range from the timeline
-    if (existingRange) {
+    setInputValues(prev => ({ ...prev, [rangeId]: '' }));
+    setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
+
+    if (existingRange && !isDefault) {
       setSelectedMonths(prevSelected => {
         const newSelected = new Set(prevSelected);
         const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
@@ -426,7 +428,6 @@ const ChronoSelectClient: React.FC = () => {
       });
     }
 
-    // Case 2: Clearing a pending input that hasn't been saved yet
     if (isPending) {
       setPendingInputs(prev => prev.filter(id => id !== rangeId));
       setInputValues(prev => {
@@ -440,18 +441,12 @@ const ChronoSelectClient: React.FC = () => {
         return newState;
       });
     }
-
-    // Case 3: Clearing the default input (when no ranges exist)
-    if (isDefault) {
-       setInputValues(prev => ({ ...prev, [rangeId]: '' }));
-       setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
-    }
   };
 
   useEffect(() => {
     if (timelineMonths.length === 0 || significantGapThresholdMonths <= 0) {
         setWorkInternalGapMonths(new Set());
-        setGapStatusMessage(statusMsgNoGap);
+        setGapStatusMessage('');
         setGapStatusType('no-gap');
         return;
     }
@@ -469,30 +464,25 @@ const ChronoSelectClient: React.FC = () => {
             firstSelectedWorkMonthIndex = timelineMonths.findIndex(m => m.id === sortedWorkMonths[0].id);
         }
     }
+    
+    if (firstSelectedWorkMonthIndex === -1) {
+      setGapStatusMessage('');
+      setGapStatusType('no-gap');
+      setWorkInternalGapMonths(new Set());
+      return;
+    }
 
     for (const gapRange of gapDateRanges) {
         const gapDuration = getMonthsDurationInDateRange(gapRange, timelineMonths);
         if (gapDuration >= significantGapThresholdMonths) {
             const gapStartIndex = timelineMonths.findIndex(m => m.id === gapRange.start.id);
-            if (firstSelectedWorkMonthIndex === -1 || gapStartIndex >= firstSelectedWorkMonthIndex || timelineMonths.findIndex(m => m.id === gapRange.end.id) >= firstSelectedWorkMonthIndex) {
+            if (gapStartIndex >= firstSelectedWorkMonthIndex || timelineMonths.findIndex(m => m.id === gapRange.end.id) >= firstSelectedWorkMonthIndex) {
                  hasExplicitLongExplainedGapRelevantToWork = true;
                  break;
             }
         }
     }
-
-    if (firstSelectedWorkMonthIndex === -1) {
-      if (hasExplicitLongExplainedGapRelevantToWork) {
-        setGapStatusMessage(statusMsgExplained);
-        setGapStatusType('explained-gap');
-      } else {
-        setGapStatusMessage(statusMsgNoGap);
-        setGapStatusType('no-gap');
-      }
-      setWorkInternalGapMonths(new Set());
-      return;
-    }
-
+    
     const unselectedWorkMonthIds = new Set(timelineMonths.map(m => m.id));
     workSelectedMonths.forEach(id => unselectedWorkMonthIds.delete(id));
 
@@ -745,7 +735,12 @@ const ChronoSelectClient: React.FC = () => {
 
     return allInputElements;
   };
-
+  
+  const showStatusMessage = 
+    workSelectedMonths.size > 0 || 
+    gapSelectedMonths.size > 0 ||
+    Object.values(workRangeInputValues).some(v => v.trim() !== '') ||
+    Object.values(gapRangeInputValues).some(v => v.trim() !== '');
 
   return (
     <div className="space-y-1 w-full" style={{
@@ -993,40 +988,42 @@ const ChronoSelectClient: React.FC = () => {
           </div>
         ))}
       </div>
-      <div className="pt-[100px] text-center space-y-2">
-        <div className="flex items-center justify-center text-xs text-muted-foreground">
-            <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-5 w-5 p-0 mr-1.5 flex-shrink-0" aria-label="Status message explanation">
-                            <Info size={14} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-background text-foreground border shadow-lg p-3 rounded-md max-w-xs" side="top" align="center">
-                       <h4 className="font-semibold mb-2">Disclaimer</h4>
-                       <p className="text-sm text-muted-foreground">
-                           The status message is an automated suggestion based on the data provided. It is not a guarantee of accuracy. Always manually review the timeline rows to verify work, gap, and unexplained periods before making any conclusions.
-                       </p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-            <span>This could be: <span className="italic">{
-                gapStatusType === 'no-gap' ? 'a period of continuous employment' :
-                gapStatusType === 'explained-gap' ? 'an explained employment gap' :
-                gapStatusType === 'unexplained-gap' ? 'an unexplained employment gap' : ''
-            }</span>.</span>
-        </div>
+      {showStatusMessage && (
+        <div className="pt-[100px] text-center space-y-2">
+            <div className="flex items-center justify-center text-xs text-muted-foreground">
+                <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 p-0 mr-1.5 flex-shrink-0" aria-label="Status message explanation">
+                                <Info size={14} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-background text-foreground border shadow-lg p-3 rounded-md max-w-xs" side="top" align="center">
+                        <h4 className="font-semibold mb-2">Disclaimer</h4>
+                        <p className="text-sm text-muted-foreground">
+                            The status message is an automated suggestion based on the data provided. It is not a guarantee of accuracy. Always manually review the timeline rows to verify work, gap, and unexplained periods before making any conclusions.
+                        </p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <span>This could be: <span className="italic">{
+                    gapStatusType === 'no-gap' ? 'a period of continuous employment' :
+                    gapStatusType === 'explained-gap' ? 'an explained employment gap' :
+                    gapStatusType === 'unexplained-gap' ? 'an unexplained employment gap' : ''
+                }</span>.</span>
+            </div>
 
-        <p className={cn(
-            "text-sm",
-            gapStatusType === 'no-gap' && 'text-green-600 dark:text-green-500',
-            gapStatusType === 'explained-gap' && 'text-red-500 dark:text-red-400',
-            gapStatusType === 'unexplained-gap' && 'font-bold text-red-700 dark:text-red-500',
-            !gapStatusMessage && 'text-muted-foreground'
-        )}>
-            {gapStatusMessage}
-        </p>
-      </div>
+            <p className={cn(
+                "text-sm",
+                gapStatusType === 'no-gap' && 'text-green-600 dark:text-green-500',
+                gapStatusType === 'explained-gap' && 'text-red-500 dark:text-red-400',
+                gapStatusType === 'unexplained-gap' && 'font-bold text-red-700 dark:text-red-500',
+                !gapStatusMessage && 'text-muted-foreground'
+            )}>
+                {gapStatusMessage}
+            </p>
+        </div>
+      )}
     </div>
   );
 };
