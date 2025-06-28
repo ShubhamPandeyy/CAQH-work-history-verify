@@ -21,7 +21,7 @@ The heart of the application is a responsive temporal grid designed for clarity 
 ### 2. Advanced Data Input & Control ✍️
 Data entry is designed to be flexible and forgiving, accommodating both visual and manual input styles.
 
-*   **Bidirectional Sync**: Selections made on the visual timeline instantly generate corresponding date range textboxes below.
+*   **Bidirectional Sync**: Selections on the visual timeline instantly generate corresponding date range textboxes below.
 *   **Direct Manual Entry**: Users can type dates directly into the input fields (`MM/YYYY` or `MM/YYYY - MM/YYYY`). Validated entries will immediately update the visual timeline.
 *   **Input Assistance**:
     *   **Smart Formatting**: The app helps guide users by auto-inserting `/` and ` - ` separators where appropriate.
@@ -63,6 +63,7 @@ This project was built with a modern, performant, and type-safe technology stack
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 *   **Icons**: [Lucide React](https://lucide.dev/)
 *   **State Management**: React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`)
+*   **Analytics**: [Vercel Analytics](https://vercel.com/analytics)
 
 ---
 
@@ -81,7 +82,7 @@ This project was built with a modern, performant, and type-safe technology stack
     ```
 2.  **Navigate to the project directory:**
     ```bash
-    cd your-project-directory
+    cd CAQH-work-history-verify
     ```
 3.  **Install dependencies:**
     ```bash
@@ -98,7 +99,7 @@ To start the Next.js development server:
 npm run dev
 ```
 
-Open [http://localhost:9002](http://localhost:9002) (or the port specified in `package.json`) in your browser to see the application.
+Open [http://localhost:3000](http://localhost:3000) (or the port specified in your terminal) in your browser to see the application.
 
 ---
 
@@ -112,6 +113,14 @@ The primary user configurations are managed in the **Settings panel** (⚙️ ic
 *   **UI Toggles**: Enable/disable UI features like the month hover tooltip.
 
 All changes are saved automatically to your browser's local storage.
+
+---
+
+## 🔗 Connect with Me
+
+I'm always open to connecting with other developers and professionals. Feel free to reach out!
+
+*   **LinkedIn**: [Shubham Pandey](https://www.linkedin.com/in/shubham-p-b1b636207/)
 
 ---
 

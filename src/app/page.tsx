@@ -11,7 +11,18 @@ export default function Home() {
       </header>
       <ChronoSelectClient />
       <footer className="py-8 mt-auto text-center text-muted-foreground text-sm">
-        <p>&copy; {new Date().getFullYear()} Pandey's Work History Visualizer. All rights reserved.</p>
+        <p>
+          &copy; {new Date().getFullYear()} Pandey's Work History Visualizer. All rights reserved.
+          <span className="mx-2">|</span>
+          <a
+            href="https://www.linkedin.com/in/shubham-p-b1b636207/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-primary"
+          >
+            Connect on LinkedIn
+          </a>
+        </p>
       </footer>
     </main>
   );
