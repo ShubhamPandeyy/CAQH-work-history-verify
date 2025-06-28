@@ -116,9 +116,7 @@ All changes are saved automatically to your browser's local storage.
 
 ---
 
-## 🔗 Connect with Me
-
-I'm always open to connecting with other developers and professionals. Feel free to reach out!
+Feel free to reach out!
 
 *   **LinkedIn**: [Shubham Pandey](https://www.linkedin.com/in/shubham-p-b1b636207/)
 
