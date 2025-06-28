@@ -2,6 +2,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import type { MonthData, RowType } from './types';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MonthTileProps {
   monthData: MonthData;
@@ -11,6 +16,7 @@ interface MonthTileProps {
   onClick: () => void;
   tileWidthPx: number;
   isInternalGap?: boolean;
+  showMonthTooltip: boolean;
 }
 
 const MonthTile: React.FC<MonthTileProps> = ({ 
@@ -20,7 +26,8 @@ const MonthTile: React.FC<MonthTileProps> = ({
   isRangeStart, 
   onClick, 
   tileWidthPx,
-  isInternalGap
+  isInternalGap,
+  showMonthTooltip
 }) => {
   const tileStyles = cn(
     "flex items-center justify-center rounded-sm font-body cursor-pointer transition-all duration-200 ease-in-out",
@@ -38,7 +45,11 @@ const MonthTile: React.FC<MonthTileProps> = ({
 
   const fontSize = Math.min(12, Math.max(7, Math.floor(tileWidthPx * 0.5)));
 
-  return (
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthName = monthNames[monthData.month - 1];
+  const tooltipText = `(${String(monthData.month).padStart(2, '0')}) ${monthName} ${monthData.year}`;
+
+  const tileButton = (
     <button
       type="button"
       className={tileStyles}
@@ -54,6 +65,21 @@ const MonthTile: React.FC<MonthTileProps> = ({
     >
       {monthData.month}
     </button>
+  );
+
+  if (!showMonthTooltip) {
+    return tileButton;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {tileButton}
+      </TooltipTrigger>
+      <TooltipContent side="top" align="center">
+        <p>{tooltipText}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 

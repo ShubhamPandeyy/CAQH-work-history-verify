@@ -13,6 +13,7 @@ interface ExtendedTimelineRowProps {
   tileWidthPx: number;
   spacePx: number;
   internalGapMonths?: Set<string>; // Optional: only for 'work' row
+  showMonthTooltip: boolean;
 }
 
 const TimelineRow: React.FC<ExtendedTimelineRowProps> = ({ 
@@ -24,7 +25,8 @@ const TimelineRow: React.FC<ExtendedTimelineRowProps> = ({
   calculateYearSegmentWidth,
   tileWidthPx,
   spacePx,
-  internalGapMonths
+  internalGapMonths,
+  showMonthTooltip
 }) => {
   if (!yearGroups || yearGroups.length === 0 || tileWidthPx <= 0) {
     return null; 
@@ -49,6 +51,7 @@ const TimelineRow: React.FC<ExtendedTimelineRowProps> = ({
                 onClick={() => onTileClick(month.id, type)}
                 tileWidthPx={tileWidthPx}
                 isInternalGap={type === 'work' && internalGapMonths?.has(month.id)}
+                showMonthTooltip={showMonthTooltip}
               />
             ))}
           </div>

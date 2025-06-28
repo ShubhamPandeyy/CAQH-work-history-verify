@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 
 const TOTAL_MONTHS = 61; // 5 years + 1 current month
@@ -42,6 +43,7 @@ const USER_EMAIL_STORAGE_KEY = 'chronoSelectUserEmail';
 const STATUS_MESSAGE_NO_GAP_KEY = 'chronoSelectStatusMessageNoGap';
 const STATUS_MESSAGE_UNEXPLAINED_GAP_KEY = 'chronoSelectStatusMessageUnexplainedGap';
 const STATUS_MESSAGE_EXPLAINED_GAP_KEY = 'chronoSelectStatusMessageExplainedGap';
+const MONTH_TOOLTIP_STORAGE_KEY = 'chronoSelectMonthTooltip';
 
 // Default Messages
 const DEFAULT_MSG_NO_GAP = 'No employment gap found. There is continuous employment from first working date.';
@@ -83,6 +85,7 @@ const ChronoSelectClient: React.FC = () => {
   const [statusMsgNoGap, setStatusMsgNoGap] = useState<string>(DEFAULT_MSG_NO_GAP);
   const [statusMsgUnexplained, setStatusMsgUnexplained] = useState<string>(DEFAULT_MSG_UNEXPLAINED_GAP);
   const [statusMsgExplained, setStatusMsgExplained] = useState<string>(DEFAULT_MSG_EXPLAINED_GAP);
+  const [showMonthTooltip, setShowMonthTooltip] = useState<boolean>(true);
 
 
   // Load all settings from localStorage on initial mount
@@ -105,6 +108,11 @@ const ChronoSelectClient: React.FC = () => {
     if (storedMsgUnexplained) setStatusMsgUnexplained(storedMsgUnexplained);
     const storedMsgExplained = localStorage.getItem(STATUS_MESSAGE_EXPLAINED_GAP_KEY);
     if (storedMsgExplained) setStatusMsgExplained(storedMsgExplained);
+
+    const storedMonthTooltip = localStorage.getItem(MONTH_TOOLTIP_STORAGE_KEY);
+    if (storedMonthTooltip) {
+      setShowMonthTooltip(storedMonthTooltip === 'true');
+    }
   }, []);
 
   // Save settings to localStorage whenever they change
@@ -114,6 +122,7 @@ const ChronoSelectClient: React.FC = () => {
   useEffect(() => { localStorage.setItem(STATUS_MESSAGE_NO_GAP_KEY, statusMsgNoGap); }, [statusMsgNoGap]);
   useEffect(() => { localStorage.setItem(STATUS_MESSAGE_UNEXPLAINED_GAP_KEY, statusMsgUnexplained); }, [statusMsgUnexplained]);
   useEffect(() => { localStorage.setItem(STATUS_MESSAGE_EXPLAINED_GAP_KEY, statusMsgExplained); }, [statusMsgExplained]);
+  useEffect(() => { localStorage.setItem(MONTH_TOOLTIP_STORAGE_KEY, String(showMonthTooltip)); }, [showMonthTooltip]);
 
 
   useEffect(() => {
@@ -849,6 +858,23 @@ const ChronoSelectClient: React.FC = () => {
 
               <Separator />
 
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="month-tooltip-switch" className="flex flex-col space-y-1">
+                  <span className="text-sm font-medium">Show Month Tooltip on Hover</span>
+                  <span className="font-normal text-xs text-muted-foreground">
+                    Display month and year when hovering over timeline tiles.
+                  </span>
+                </Label>
+                <Switch
+                  id="month-tooltip-switch"
+                  checked={showMonthTooltip}
+                  onCheckedChange={setShowMonthTooltip}
+                  aria-label="Toggle month tooltip on hover"
+                />
+              </div>
+
+              <Separator />
+
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <Label className="text-base font-medium">Customize Status Messages</Label>
@@ -885,62 +911,66 @@ const ChronoSelectClient: React.FC = () => {
         </Sheet>
       </div>
 
-      <div className="flex w-full items-end">
-        <div style={{ width: `var(--row-label-width-px)` }} className="flex-shrink-0" />
-        <div ref={timelineContentAreaRef} className="flex flex-grow">
-          <div className="flex" style={{ columnGap: `${SPACE_PX}px` }}>
-            {yearGroups.map((group) => (
-              <div
-                key={group.year}
-                className="year-label text-xs font-headline text-muted-foreground text-center"
-                style={{ minWidth: calculateYearSegmentWidth(group.months.length) }}
-              >
-                {group.year}
-              </div>
-            ))}
+      <TooltipProvider delayDuration={150}>
+        <div className="flex w-full items-end">
+          <div style={{ width: `var(--row-label-width-px)` }} className="flex-shrink-0" />
+          <div ref={timelineContentAreaRef} className="flex flex-grow">
+            <div className="flex" style={{ columnGap: `${SPACE_PX}px` }}>
+              {yearGroups.map((group) => (
+                <div
+                  key={group.year}
+                  className="year-label text-xs font-headline text-muted-foreground text-center"
+                  style={{ minWidth: calculateYearSegmentWidth(group.months.length) }}
+                >
+                  {group.year}
+                </div>
+              ))}
+            </div>
           </div>
+          <div style={{ width: `calc(var(--reset-button-width-px) + var(--reset-button-margin-px))` }} className="flex-shrink-0" />
         </div>
-        <div style={{ width: `calc(var(--reset-button-width-px) + var(--reset-button-margin-px))` }} className="flex-shrink-0" />
-      </div>
 
-      <div className="flex items-center w-full">
-        <div style={{ width: `var(--row-label-width-px)`}} className="flex-shrink-0 pr-2 text-xs font-medium text-primary text-right">Work History</div>
-        <div className="flex-grow">
-            <TimelineRow
-            type="work"
-            yearGroups={yearGroups}
-            selectedMonths={workSelectedMonths}
-            firstClickId={workFirstClick}
-            onTileClick={handleTileClick}
-            calculateYearSegmentWidth={calculateYearSegmentWidth}
-            tileWidthPx={tileWidthPx}
-            spacePx={SPACE_PX}
-            internalGapMonths={workInternalGapMonths}
-            />
+        <div className="flex items-center w-full">
+          <div style={{ width: `var(--row-label-width-px)`}} className="flex-shrink-0 pr-2 text-xs font-medium text-primary text-right">Work History</div>
+          <div className="flex-grow">
+              <TimelineRow
+              type="work"
+              yearGroups={yearGroups}
+              selectedMonths={workSelectedMonths}
+              firstClickId={workFirstClick}
+              onTileClick={handleTileClick}
+              calculateYearSegmentWidth={calculateYearSegmentWidth}
+              tileWidthPx={tileWidthPx}
+              spacePx={SPACE_PX}
+              internalGapMonths={workInternalGapMonths}
+              showMonthTooltip={showMonthTooltip}
+              />
+          </div>
+          <Button variant="outline" size="icon" className="ml-2 flex-shrink-0 transition-all duration-200 ease-in-out hover:scale-110" style={{width: 'var(--reset-button-width-px)', height: 'var(--reset-button-width-px)'}} onClick={() => handleResetSelection('work')} aria-label="Reset work history">
+              <RotateCcw size={16} />
+          </Button>
         </div>
-        <Button variant="outline" size="icon" className="ml-2 flex-shrink-0 transition-all duration-200 ease-in-out hover:scale-110" style={{width: 'var(--reset-button-width-px)', height: 'var(--reset-button-width-px)'}} onClick={() => handleResetSelection('work')} aria-label="Reset work history">
-            <RotateCcw size={16} />
-        </Button>
-      </div>
 
-      <div className="flex items-center w-full mt-1">
-        <div style={{ width: `var(--row-label-width-px)`}} className="flex-shrink-0 pr-2 text-xs font-medium text-primary text-right">Gap History</div>
-        <div className="flex-grow">
-            <TimelineRow
-            type="gap"
-            yearGroups={yearGroups}
-            selectedMonths={gapSelectedMonths}
-            firstClickId={gapFirstClick}
-            onTileClick={handleTileClick}
-            calculateYearSegmentWidth={calculateYearSegmentWidth}
-            tileWidthPx={tileWidthPx}
-            spacePx={SPACE_PX}
-            />
+        <div className="flex items-center w-full mt-1">
+          <div style={{ width: `var(--row-label-width-px)`}} className="flex-shrink-0 pr-2 text-xs font-medium text-primary text-right">Gap History</div>
+          <div className="flex-grow">
+              <TimelineRow
+              type="gap"
+              yearGroups={yearGroups}
+              selectedMonths={gapSelectedMonths}
+              firstClickId={gapFirstClick}
+              onTileClick={handleTileClick}
+              calculateYearSegmentWidth={calculateYearSegmentWidth}
+              tileWidthPx={tileWidthPx}
+              spacePx={SPACE_PX}
+              showMonthTooltip={showMonthTooltip}
+              />
+          </div>
+          <Button variant="outline" size="icon" className="ml-2 flex-shrink-0 transition-all duration-200 ease-in-out hover:scale-110" style={{width: 'var(--reset-button-width-px)', height: 'var(--reset-button-width-px)'}} onClick={() => handleResetSelection('gap')} aria-label="Reset gap history">
+              <RotateCcw size={16} />
+          </Button>
         </div>
-        <Button variant="outline" size="icon" className="ml-2 flex-shrink-0 transition-all duration-200 ease-in-out hover:scale-110" style={{width: 'var(--reset-button-width-px)', height: 'var(--reset-button-width-px)'}} onClick={() => handleResetSelection('gap')} aria-label="Reset gap history">
-            <RotateCcw size={16} />
-        </Button>
-      </div>
+      </TooltipProvider>
 
       <div
           className="space-y-4 mt-[100px]"
