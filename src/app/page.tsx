@@ -1,4 +1,5 @@
 import ChronoSelectClient from '@/components/chrono-select/ChronoSelectClient';
+import { Linkedin } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -18,9 +19,10 @@ export default function Home() {
             href="https://www.linkedin.com/in/shubham-p-b1b636207/"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-primary"
+            className="inline-flex items-center gap-1 underline hover:text-primary"
           >
-            Connect on LinkedIn
+            <Linkedin size={14} />
+            LinkedIn
           </a>
         </p>
       </footer>
