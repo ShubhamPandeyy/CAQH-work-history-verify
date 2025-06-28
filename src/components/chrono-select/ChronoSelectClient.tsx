@@ -71,6 +71,7 @@ const ChronoSelectClient: React.FC = () => {
   const [tileWidthPx, setTileWidthPx] = useState(MIN_TILE_WIDTH_PX);
   const timelineContentAreaRef = useRef<HTMLDivElement>(null);
   const [gapStatusMessage, setGapStatusMessage] = useState<string>(DEFAULT_MSG_NO_GAP);
+  const [gapStatusType, setGapStatusType] = useState<'no-gap' | 'explained-gap' | 'unexplained-gap'>('no-gap');
   
   // Settings State
   const [significantGapThresholdMonths, setSignificantGapThresholdMonths] = useState<number>(6);
@@ -405,52 +406,45 @@ const ChronoSelectClient: React.FC = () => {
   
   const handleClearInput = (rangeId: string, type: RowType) => {
     const isWork = type === 'work';
-    const dateRanges = isWork ? workDateRanges : gapDateRanges;
-    const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
     const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
     const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
     const setPendingInputs = isWork ? setPendingWorkInputs : setPendingGapInputs;
-
+    const dateRanges = isWork ? workDateRanges : gapDateRanges;
+    const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
+  
     const existingRange = dateRanges.find(r => r.id === rangeId);
     const isPending = pendingInputs.includes(rangeId);
     const isDefault = rangeId.startsWith('default-');
 
-    setInputValues(prev => {
-        const newState = { ...prev };
-        newState[rangeId] = '';
-        if (!isDefault) {
-            // Keep it in the inputValues map, just cleared. The logic below will remove it if it's pending.
-        }
-        return newState;
-    });
-
-    setInputValidationStatus(prev => {
-        const newState = { ...prev };
-        newState[rangeId] = 'neutral';
-        return newState;
-    });
-
+    // Case 1: Clearing an existing, saved range from the timeline
     if (existingRange) {
-        setSelectedMonths(prevSelected => {
-            const newSelected = new Set(prevSelected);
-            const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
-            monthsToRemove.forEach(id => newSelected.delete(id));
-            return newSelected;
-        });
+      setSelectedMonths(prevSelected => {
+        const newSelected = new Set(prevSelected);
+        const monthsToRemove = getMonthIdsInRange(existingRange.start.id, existingRange.end.id, timelineMonths);
+        monthsToRemove.forEach(id => newSelected.delete(id));
+        return newSelected;
+      });
     }
 
+    // Case 2: Clearing a pending input that hasn't been saved yet
     if (isPending) {
-        setPendingInputs(prev => prev.filter(id => id !== rangeId));
-        setInputValues(prev => {
-            const newState = { ...prev };
-            delete newState[rangeId];
-            return newState;
-        });
-        setInputValidationStatus(prev => {
-            const newState = { ...prev };
-            delete newState[rangeId];
-            return newState;
-        });
+      setPendingInputs(prev => prev.filter(id => id !== rangeId));
+      setInputValues(prev => {
+        const newState = { ...prev };
+        delete newState[rangeId];
+        return newState;
+      });
+      setInputValidationStatus(prev => {
+        const newState = { ...prev };
+        delete newState[rangeId];
+        return newState;
+      });
+    }
+
+    // Case 3: Clearing the default input (when no ranges exist)
+    if (isDefault) {
+       setInputValues(prev => ({ ...prev, [rangeId]: '' }));
+       setInputValidationStatus(prev => ({ ...prev, [rangeId]: 'neutral' }));
     }
   };
 
@@ -458,11 +452,9 @@ const ChronoSelectClient: React.FC = () => {
     if (timelineMonths.length === 0 || significantGapThresholdMonths <= 0) {
         setWorkInternalGapMonths(new Set());
         setGapStatusMessage(statusMsgNoGap);
+        setGapStatusType('no-gap');
         return;
     }
-
-    let currentStatusMessage = statusMsgNoGap;
-    const newInternalGapMonthsForOutline = new Set<string>();
 
     let hasExplicitLongExplainedGapRelevantToWork = false;
     let hasAtLeastOneSignificantUnexplainedGap = false;
@@ -491,12 +483,13 @@ const ChronoSelectClient: React.FC = () => {
 
     if (firstSelectedWorkMonthIndex === -1) {
       if (hasExplicitLongExplainedGapRelevantToWork) {
-        currentStatusMessage = statusMsgExplained;
+        setGapStatusMessage(statusMsgExplained);
+        setGapStatusType('explained-gap');
       } else {
-        currentStatusMessage = statusMsgNoGap;
+        setGapStatusMessage(statusMsgNoGap);
+        setGapStatusType('no-gap');
       }
       setWorkInternalGapMonths(new Set());
-      setGapStatusMessage(currentStatusMessage);
       return;
     }
 
@@ -519,7 +512,8 @@ const ChronoSelectClient: React.FC = () => {
     if (currentPotentialRange.length > 0) {
       potentialWorkGapRangesData.push(currentPotentialRange);
     }
-
+    
+    const newInternalGapMonthsForOutline = new Set<string>();
     for (const potentialGapMonthData of potentialWorkGapRangesData) {
       if (potentialGapMonthData.length === 0) continue;
 
@@ -543,16 +537,23 @@ const ChronoSelectClient: React.FC = () => {
       }
     }
 
+    let currentStatusMessage: string;
+    let currentStatusType: 'no-gap' | 'explained-gap' | 'unexplained-gap';
+
     if (hasAtLeastOneSignificantUnexplainedGap) {
       currentStatusMessage = statusMsgUnexplained;
+      currentStatusType = 'unexplained-gap';
     } else if (hasExplicitLongExplainedGapRelevantToWork || hadAnySignificantPotentialGapsAtAllRelevantToWork) {
       currentStatusMessage = statusMsgExplained;
+      currentStatusType = 'explained-gap';
     } else {
       currentStatusMessage = statusMsgNoGap;
+      currentStatusType = 'no-gap';
     }
 
     setWorkInternalGapMonths(newInternalGapMonthsForOutline);
     setGapStatusMessage(currentStatusMessage);
+    setGapStatusType(currentStatusType);
 
   }, [workSelectedMonths, gapSelectedMonths, gapDateRanges, timelineMonths, significantGapThresholdMonths, statusMsgNoGap, statusMsgExplained, statusMsgUnexplained]);
 
@@ -992,8 +993,39 @@ const ChronoSelectClient: React.FC = () => {
           </div>
         ))}
       </div>
-      <div className="pt-[100px] text-center">
-        <p className="text-muted-foreground text-sm">{gapStatusMessage}</p>
+      <div className="pt-[100px] text-center space-y-2">
+        <div className="flex items-center justify-center text-xs text-muted-foreground">
+            <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 p-0 mr-1.5 flex-shrink-0" aria-label="Status message explanation">
+                            <Info size={14} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-background text-foreground border shadow-lg p-3 rounded-md max-w-xs" side="top" align="center">
+                       <h4 className="font-semibold mb-2">Disclaimer</h4>
+                       <p className="text-sm text-muted-foreground">
+                           The status message is an automated suggestion based on the data provided. It is not a guarantee of accuracy. Always manually review the timeline rows to verify work, gap, and unexplained periods before making any conclusions.
+                       </p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+            <span>This could be: <span className="italic">{
+                gapStatusType === 'no-gap' ? 'a period of continuous employment' :
+                gapStatusType === 'explained-gap' ? 'an explained employment gap' :
+                gapStatusType === 'unexplained-gap' ? 'an unexplained employment gap' : ''
+            }</span>.</span>
+        </div>
+
+        <p className={cn(
+            "text-sm",
+            gapStatusType === 'no-gap' && 'text-green-600 dark:text-green-500',
+            gapStatusType === 'explained-gap' && 'text-red-500 dark:text-red-400',
+            gapStatusType === 'unexplained-gap' && 'font-bold text-red-700 dark:text-red-500',
+            !gapStatusMessage && 'text-muted-foreground'
+        )}>
+            {gapStatusMessage}
+        </p>
       </div>
     </div>
   );
