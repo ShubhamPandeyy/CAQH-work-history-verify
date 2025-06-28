@@ -417,10 +417,10 @@ const ChronoSelectClient: React.FC = () => {
     const isWork = type === 'work';
     const setInputValues = isWork ? setWorkRangeInputValues : setGapRangeInputValues;
     const setSelectedMonths = isWork ? setWorkSelectedMonths : setGapSelectedMonths;
-    const setPendingInputs = isWork ? setPendingWorkInputs : setPendingGapInputs;
     const dateRanges = isWork ? workDateRanges : gapDateRanges;
+    const setPendingInputs = isWork ? setPendingWorkInputs : setPendingGapInputs;
     const pendingInputs = isWork ? pendingWorkInputs : pendingGapInputs;
-  
+    
     const existingRange = dateRanges.find(r => r.id === rangeId);
     const isPending = pendingInputs.includes(rangeId);
     const isDefault = rangeId.startsWith('default-');
@@ -590,6 +590,7 @@ const ChronoSelectClient: React.FC = () => {
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
         <li>The main grid shows months for the past 5 years, plus the current month.</li>
         <li>Year labels appear above their respective 12-month segments.</li>
+        <li><strong>Hover Tooltip:</strong> Hover over any month tile to see its full date (e.g., "(05) May 2021"). You can turn this off in Settings.</li>
     </ul>
 
     <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">2. Selecting Periods 👇</h4>
@@ -606,6 +607,7 @@ const ChronoSelectClient: React.FC = () => {
         <li>Use the "+" button to add a new date range input.</li>
         <li>Inputs show a <span class="text-green-600 font-medium">green border</span> for valid dates, <span class="text-red-600 font-medium">red for invalid</span> after you edit them.</li>
         <li>Press "Enter" to submit the date, or click the 'X' to clear an input.</li>
+        <li>Click the "ℹ️" Info icon for detailed formatting help.</li>
     </ul>
 
     <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">4. Resetting 🔄</h4>
@@ -615,17 +617,19 @@ const ChronoSelectClient: React.FC = () => {
 
     <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">5. Gap Analysis 📊</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
-        <li>The tool automatically analyzes your entries to identify significant employment gaps.</li>
+        <li>The tool automatically analyzes your entries to identify significant employment gaps. Analysis only begins from your <strong>first declared work month</strong>.</li>
         <li>A "significant gap" is a period not covered by "Work History" that meets a minimum length (configurable in Settings, defaults to 6 months).</li>
-        <li><strong>Red Outlines:</strong> Significant unexplained gaps <em>within or after</em> your declared "Work History" are highlighted with a red outline on the "Work History" timeline.</li>
-        <li><strong>Status Messages:</strong> A message at the bottom provides an overall status of your timeline.</li>
+        <li><strong>Red Outlines:</strong> Significant unexplained gaps are highlighted with a red outline on the "Work History" timeline to draw your attention.</li>
+        <li><strong>Status Messages:</strong> A color-coded message at the bottom provides an overall status of your timeline. It comes with a tooltip explaining that it's an automated suggestion.</li>
     </ul>
 
     <h4 class="text-md font-semibold mt-4 mb-1 text-foreground">6. Settings ⚙️ (Cog Icon)</h4>
     <ul class="list-disc list-inside text-sm space-y-1 pl-2 text-muted-foreground">
-        <li>Adjust the "Minimum Significant Gap (Months)" to define what constitutes a significant gap. This setting is saved for your next visit!</li>
-        <li>Customize the status messages for different gap scenarios.</li>
-        <li>Edit your display name for a personalized welcome.</li>
+        <li><strong>Profile:</strong> Edit your display name for a personalized welcome.</li>
+        <li><strong>Minimum Significant Gap:</strong> Adjust the month threshold for what the tool considers a significant gap.</li>
+        <li><strong>Month Tooltip:</strong> Enable or disable the hover tooltip on the timeline tiles.</li>
+        <li><strong>Status Messages:</strong> Customize the text for different gap scenarios. You can also reset them to default.</li>
+        <li>All settings are saved in your browser for your next visit!</li>
     </ul>
 
     <p class="mt-4 text-xs text-muted-foreground opacity-80">
@@ -973,7 +977,7 @@ const ChronoSelectClient: React.FC = () => {
       </TooltipProvider>
 
       <div
-          className="space-y-4 mt-[100px]"
+          className="space-y-4 mt-8"
           style={{
               paddingRight: `calc(var(--reset-button-width-px) + var(--reset-button-margin-px))`
           }}
@@ -1019,7 +1023,9 @@ const ChronoSelectClient: React.FC = () => {
         ))}
       </div>
       {showStatusMessage && (
-        <div className="pt-[100px] text-center space-y-2">
+        <div className="pt-8 text-center space-y-2" style={{
+            paddingRight: `calc(var(--reset-button-width-px) + var(--reset-button-margin-px))`
+        }}>
             <div className="flex items-center justify-center text-xs text-muted-foreground">
                 <TooltipProvider delayDuration={100}>
                     <Tooltip>
@@ -1054,6 +1060,7 @@ const ChronoSelectClient: React.FC = () => {
             </p>
         </div>
       )}
+      <div className='h-[100px]'></div>
     </div>
   );
 };

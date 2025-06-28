@@ -1,4 +1,3 @@
-
 # Pandey's Work History Visualizer: An Advanced Temporal Analysis Tool 🚀
 
 > A personal project exploring complex state management and dynamic UI with React and Next.js. This tool is designed to help users visually map out and analyze their professional history with precision.
@@ -16,6 +15,7 @@ The heart of the application is a responsive temporal grid designed for clarity 
 *   **Interactive Selection**: Users can visually define work or gap periods with just two clicks—a start month and an end month. The tool automatically highlights the range.
     *   **Work History**: Marked in a distinct green.
     *   **Gap History**: Marked in a complementary brown for easy differentiation.
+*   **Hover Tooltip**: For enhanced accessibility and ease of use, hovering over any month tile displays its full date (e.g., `(05) May 2021`). This can be toggled in the settings.
 *   **Adaptive Layout**: The entire grid is responsive. Month tiles and year labels dynamically resize to fit the available screen space, ensuring usability on any device.
 
 ### 2. Advanced Data Input & Control ✍️
@@ -35,19 +35,20 @@ The tool goes beyond simple tracking by performing a heuristic analysis of the u
 *   **Unexplained Gap Detection**: The system intelligently identifies periods *after* the first work entry that are not accounted for by either "Work History" or "Gap History".
 *   **Configurable Threshold**: What's a "significant" gap? The user decides! The default is 6 months, but this can be adjusted in the settings.
 *   **Visual Alerts**: Significant, unexplained gaps are highlighted with a distinct outline on the "Work History" row, drawing attention to periods that may need an explanation.
-*   **Contextual Status Messages**: The app provides clear, dynamic feedback at the bottom of the page based on its analysis.
+*   **Color-Coded Status Messages**: The app provides clear, dynamic, and color-coded feedback at the bottom of the page based on its analysis.
 
 ### 4. Personalization & Settings 🛠️
 A slide-out settings panel allows users to tailor the experience to their needs.
 
 *   **User Profile**: A welcoming touch that allows users to set their display name.
 *   **Customizable Messages**: Users can edit the default status messages for "No Gaps," "Explained Gaps," and "Unexplained Gaps."
-*   **Persistent Configuration**: All settings—the gap threshold, user profile, and custom messages—are saved in the browser's `localStorage`, so they're remembered for the next session.
+*   **Timeline Toggles**: Users can enable or disable the month hover tooltip.
+*   **Persistent Configuration**: All settings—the gap threshold, user profile, custom messages, and UI toggles—are saved in the browser's `localStorage`, so they're remembered for the next session.
 
 ### 5. Built-in Guidance ❓
 To ensure a smooth user experience, the app includes integrated help.
 *   **Help Panel**: A dedicated help icon opens a slide-out guide explaining every feature.
-*   **Tooltips**: "Info" icons next to the date input sections provide quick, contextual tips on formatting.
+*   **Tooltips**: "Info" icons next to the date input sections and status message provide quick, contextual tips.
 
 ---
 
@@ -61,6 +62,7 @@ This project was built with a modern, performant, and type-safe technology stack
 *   **Component Library**: [ShadCN UI](https://ui.shadcn.com/)
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 *   **Icons**: [Lucide React](https://lucide.dev/)
+*   **State Management**: React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`)
 
 ---
 
@@ -105,8 +107,9 @@ Open [http://localhost:9002](http://localhost:9002) (or the port specified in `p
 The primary user configurations are managed in the **Settings panel** (⚙️ icon):
 
 *   **Minimum Significant Gap**: Adjust the month threshold for gap analysis (1-60).
-*   **User Profile**: Set your display name and email.
+*   **User Profile**: Set your display name.
 *   **Status Messages**: Customize the text used for gap analysis feedback.
+*   **UI Toggles**: Enable/disable UI features like the month hover tooltip.
 
 All changes are saved automatically to your browser's local storage.
 
